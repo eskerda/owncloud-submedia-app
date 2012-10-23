@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<info>
+    <id>submedia</id>
+    <name>SubMedia</name>
+    <description>Support Subsonic API on owncloud's media</description>
+    <version>1.0</version>
+    <licence>AGPL</licence>
+    <author>Lluis Esquerda</author>
+    <require>4</require>
+    <remote>
+		<submedia>remote.php</submedia>
+	</remote>
+</info>
