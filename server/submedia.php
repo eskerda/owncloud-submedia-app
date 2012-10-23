@@ -1,14 +1,9 @@
 <?php
 
-OCP\App::checkAppEnabled('media');
-require_once(OC::$APPSROOT . '/apps/media/lib_collection.php');
-require_once(OC::$APPSROOT . '/apps/submedia/lib/subsonic.php');
-
-
 $req_info = pathinfo($_SERVER['PATH_INFO']);
 $action = $req_info['filename'];
 try {
-	$subsonic = new OC_MEDIA_SUBSONIC($_REQUEST);
+	$subsonic = new OC_Media_Subsonic($_REQUEST);
 	$response = array();
 	switch($action){
 		case 'ping':
@@ -16,6 +11,12 @@ try {
 			break;
 		case 'getMusicFolders':
 			$response = $subsonic->getMusicFolders();
+			break;
+		case 'getMusicDirectory':
+			$response = $subsonic->getMusicDirectory($_REQUEST);
+			break;
+		case 'getIndexes':
+			$response = $subsonic->getIndexes($_REQUEST);
 			break;
 		case 'getLicense':
 			break;
@@ -29,7 +30,7 @@ try {
 	);
 }
 
-$tmpl = new OCP\Template("submedia", OC_MEDIA_SUBSONIC::getFormat($_REQUEST));
+$tmpl = new OCP\Template("submedia", OC_Media_Subsonic::getFormat($_REQUEST));
 $tmpl->assign('response', $response);
 $tmpl->assign('action', $action);
 $tmpl->assign('response', $response);

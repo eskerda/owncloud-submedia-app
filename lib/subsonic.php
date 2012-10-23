@@ -110,13 +110,19 @@ class OC_MEDIA_SUBSONIC{
 		$users=$query->execute(array($user))->fetchAll();
 		if (count($users)>0){
 			$auth = $users[0]['user_password_sha256'];
-			return $auth == $password;
+			if ($auth == $password){
+				OC_Media_Collection::$uid=$users[0]['user_id'];
+				OC_User::setUserId($users[0]['user_id']);
+				return true;
+			}
+			return false;
 		}
 		return false;
 	}
 
 	/**
-	 * @return Music folders of an user
+	 * @return 	Returns all configured top-level music folders. Takes no 
+	 *			extra parameters.
 	 */
 	public function getMusicFolders(){
 		/*	To day, there's no support for music folders in owncloud,
@@ -139,5 +145,61 @@ class OC_MEDIA_SUBSONIC{
 					)
 			)
 		);
+	}
+
+	/**
+	 * @brief Returns an indexed structure of all artists.
+	 * @param string optional $musicFolderId If specified, only return artists in the music folder with the given ID. 
+	 * @param int optional $ifModifiedSince If specified, only return a result if the artist collection has changed since the given time (in milliseconds since 1 Jan 1970).
+	 * @return associative array
+	 */
+	public function getIndexes(){
+		/** We want something similar to this mess...
+		<indexes lastModified="1347639481261">
+			<shortcut name="Podcast" id="920"/>
+			<index name="A">
+			<artist name="Antigona" id="937"/>
+			<artist name="Aygan" id="926"/>
+			</index>
+			<index name="B">
+			<artist name="bilk" id="939"/>
+			<artist name="Binaerpilot" id="931"/>
+			<artist name="Brad Sucks" id="935"/>
+			</index>
+			<index name="C">
+			<artist name="Curb Jaw" id="936"/>
+			</index>
+			<index name="D">
+			<artist name="Deflone" id="932"/>
+			<artist name="Dereleech" id="924"/>
+			</index>
+		**/
+		$artists = OC_Media_Collection::getArtists();
+
+		// TODO: Find a way to get the last modified time
+		$response = array(
+			'indexes' => array(
+				'lastModified' => strval(round(microtime(true)*100)),
+				'index' => array()
+			)
+		);
+
+		foreach ($artists as $artist){
+			$name = $artist['artist_name'];
+			if (preg_match('/^[a-zA-Z]*$/',$name[0]) > 0){
+				// starts with allowed char
+				$letter = strtoupper($name[0]);
+			} else {
+				// should be grouped under #
+				$letter = '#';
+			}
+			if (!isset($response['indexes']['index'][$letter]))
+				$response['indexes']['index'][$letter] = array();
+
+			$response['indexes']['index'][$letter][] = array(
+				'id' => 'artist_'.$artist['artist_id'],
+				'name' => $artist['artist_name']);
+		}
+		return $response;
 	}
 }

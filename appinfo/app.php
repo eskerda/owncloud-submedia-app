@@ -1,5 +1,10 @@
 <?php
-//OC::$CLASSPATH['OC_Media_Playlist'] = 'apps/media_playlists/lib/playlist.php';
+
+
+OCP\App::checkAppEnabled('media');
+
+OC::$CLASSPATH['OC_Media_Collection'] = 'apps/media/lib_collection.php';
+OC::$CLASSPATH['OC_Media_Subsonic'] = 'apps/submedia/lib/subsonic.php';
 
 OCP\App::addNavigationEntry( array(
     'id' => 'submedia',
