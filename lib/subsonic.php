@@ -166,13 +166,7 @@ class OC_MEDIA_SUBSONIC{
 			<artist name="Binaerpilot" id="931"/>
 			<artist name="Brad Sucks" id="935"/>
 			</index>
-			<index name="C">
-			<artist name="Curb Jaw" id="936"/>
-			</index>
-			<index name="D">
-			<artist name="Deflone" id="932"/>
-			<artist name="Dereleech" id="924"/>
-			</index>
+			...
 		**/
 		$artists = OC_Media_Collection::getArtists();
 
@@ -201,5 +195,99 @@ class OC_MEDIA_SUBSONIC{
 				'name' => $artist['artist_name']);
 		}
 		return $response;
+	}
+
+	/**
+	 * @brief 	Returns a listing of all files in a music directory. Typically 
+	 * 			used to get list of albums for an artist, or list of songs for 
+	 * 			an album.
+	 *
+	 * @param int $id required 	A string which uniquely identifies the music 
+	 *							folder. Obtained by calls to getIndexes or 
+	 *							getMusicDirectory.
+	 * @return 	Returns an associative array with a nested 
+	 *			<directory> element on success.
+	 */
+	function getMusicDirectory($params){
+			$id = (isset($params['id']))?$params['id']:false;
+			if (!$id){
+				throw new Exception('Required string parameter \'id\' not present', 10);
+			}
+			$sid = split('_', $id);
+			switch($sid[0]){
+				case 'album':
+					$album_id = $sid[1];
+
+					$album = OC_Media_Collection::getAlbumName($album_id);
+					$songs = OC_Media_Collection::getSongs(0, $album_id);
+
+					$response = array(
+						'directory' => array(
+							'id' => $id,
+							'name' => $album,
+							'child' => array()
+						)
+					);
+					foreach ($songs as $song){
+						if (!isset($artist)){
+							$artist = OC_Media_Collection::getArtistName($song['song_artist']);
+						}
+						$response['directory']['child'][] = array(
+							'id' => $song['song_id'],
+							'parent' => $id,
+							'title' => $song['song_name'],
+							'album' => $album,
+							'artist' => $artist,
+							'isDir' => false,
+							'coverArt' => 'album_'.$album_id,
+							//'created' =>
+							'duration' => $song['song_length'],
+							'bitRate' => round($song['song_size'] / $song['song_length'] * 0.008),
+							'track' => $song['song_track'],
+							//'year' =>
+							//'genre' => 
+							'size' => $song['song_size'],
+							'suffix' => 'mp3',
+							'contentType' => 'audio/mpeg',
+							'isVideo' => false,
+							'path' => sprintf('%s/%s/%d - %s.mp3',$artist,$album,$song['song_track'],$song['song_name']),
+							'albumId' => $album_id,
+							'artistId' => $song['song_artist'],
+							'type' => 'music'
+						);
+					}
+					break;
+				case 'artist':
+					$artist_id = $sid[1];
+
+					$artist = OC_Media_Collection::getArtistName($artist_id);
+					$albums = OC_Media_Collection::getAlbums($artist_id);
+
+					$response = array(
+						'directory' => array(
+							'id'=>$id,
+							'name'=>$artist,
+							'child'=>array()
+						)
+					);
+					foreach ($albums as $album){
+						$response['directory']['child'][] = array(
+							'id' => 'album_'.$album['album_id'],
+							'parent' => $id,
+							'title' => $album['album_name'],
+							'artist' => $artist,
+							'isDir' => true,
+							'coverArt' => 'album_'.$album['album_id'],
+							//'created' => 
+							//'userRating' =>
+							//'averageRating' =>
+						);
+					}
+					break;
+				default:
+					throw new Exception('I don\'t know what am I doing...',0);
+			}
+
+			return $response;
 	}
 }
