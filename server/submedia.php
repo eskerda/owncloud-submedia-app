@@ -8,11 +8,14 @@ require_once(OC::$APPSROOT . '/apps/submedia/lib/subsonic.php');
 $req_info = pathinfo($_SERVER['PATH_INFO']);
 $action = $req_info['filename'];
 try {
-	$submedia = new OC_MEDIA_SUBSONIC($_REQUEST);
+	$subsonic = new OC_MEDIA_SUBSONIC($_REQUEST);
 	$response = array();
 	switch($action){
 		case 'ping':
 			// Pong >_<
+			break;
+		case 'getMusicFolders':
+			$response = $subsonic->getMusicFolders();
 			break;
 		case 'getLicense':
 			break;

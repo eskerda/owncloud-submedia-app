@@ -63,6 +63,14 @@ class OC_MEDIA_SUBSONIC{
 		'xml','json','jsonp'
 	);
 
+	public static function getFormat($params){
+		$format = (isset($params['f']))?$params['f']:'xml';
+		if (!in_array($format, OC_MEDIA_SUBSONIC::$formatWhiteList)){
+			$format = 'xml';
+		}
+		return $format;
+	}
+
 	public function __construct($params){
 		$username = (isset($params['u']))?$params['u']:false;
 		$password = (isset($params['p']))?$params['p']:false;
@@ -107,11 +115,29 @@ class OC_MEDIA_SUBSONIC{
 		return false;
 	}
 
-	public static function getFormat($params){
-		$format = (isset($params['f']))?$params['f']:'xml';
-		if (!in_array($format, OC_MEDIA_SUBSONIC::$formatWhiteList)){
-			$format = 'xml';
-		}
-		return $format;
+	/**
+	 * @return Music folders of an user
+	 */
+	public function getMusicFolders(){
+		/*	To day, there's no support for music folders in owncloud,
+			In that sense, we just return a virtual folder with the
+			username.
+
+			In subsonic, this structures content as:
+			 - Podcasts
+			 - Music
+			 - ...
+
+			In the future we could, for instance, separate shared
+			music into different folders.
+		*/
+		return array(
+			'musicFolders' => array(
+					'musicFolder' => array(
+						'id' => 0,
+						'name' => $this->user,
+					)
+			)
+		);
 	}
 }
