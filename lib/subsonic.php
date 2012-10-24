@@ -214,29 +214,7 @@ class OC_MEDIA_SUBSONIC{
                         if (!isset($artist)){
                             $artist = OC_Media_Collection::getArtistName($song['song_artist']);
                         }
-                        $response['directory']['child'][] = array(
-                            'id' => $song['song_id'],
-                            'parent' => $id,
-                            'title' => $song['song_name'],
-                            'album' => $album,
-                            'artist' => $artist,
-                            'isDir' => false,
-                            'coverArt' => 'album_'.$album_id,
-                            //'created' =>
-                            'duration' => $song['song_length'],
-                            'bitRate' => round($song['song_size'] / $song['song_length'] * 0.008),
-                            'track' => $song['song_track'],
-                            //'year' =>
-                            //'genre' => 
-                            'size' => $song['song_size'],
-                            'suffix' => 'mp3',
-                            'contentType' => 'audio/mpeg',
-                            'isVideo' => false,
-                            'path' => sprintf('%s/%s/%d - %s.mp3',$artist,$album,$song['song_track'],$song['song_name']),
-                            'albumId' => $album_id,
-                            'artistId' => $song['song_artist'],
-                            'type' => 'music'
-                        );
+                        $response['directory']['child'][] = OC_MEDIA_SUBSONIC::modelSongToSubsonic($song, $artist, $album);
                     }
                     break;
                 case 'artist':
@@ -271,5 +249,132 @@ class OC_MEDIA_SUBSONIC{
             }
 
             return $response;
+    }
+
+    function stream($params){
+        $id = (isset($params['id']))?$params['id']:false;
+        if (!$id){
+            throw new Exception('Required string parameter \'id\' not present', 10);
+        }
+        if($song=OC_MEDIA_COLLECTION::getSong($id)){
+            OC_Util::setupFS($song["song_user"]);
+            header('Content-type: '.OC_Filesystem::getMimeType($song['song_path']));
+            header('Content-Length: '.$song['song_size']);
+            OC_Filesystem::readfile($song['song_path']);
+        }
+    }
+
+    function search ($query){
+        
+        if (!isset($query['query']))
+            $q = '';
+        else{
+            /* Only allow valid characters */
+            $q = preg_replace('/[^a-z0-9\ ]/', '', $query['query']);
+            /* Remove one letter words */
+            $q = preg_replace('/\s+\S{1,2}(?!\S)|(?<!\S)\S{1,2}\s+/', '', $q);
+            if (strlen($q) < 4)
+                return array('searchResult2'=>'');
+        }
+        $q = trim(htmlentities($q));
+
+        if (!isset($query['artistCount']))
+            $artistCount = 10;
+        else
+            $artistCount = $query['artistCount'];
+
+        if (!isset($query['albumCount']))
+            $albumCount = 20;
+        else
+            $albumCount = $query['albumCount'];
+
+        if (!isset($query['songCount']))
+            $songCount = 25;
+        else
+            $songCount = $query['songCount'];
+
+        $artists = OC_Media_Collection::getArtists($q);
+        $albums = OC_Media_Collection::getAlbums(0, $q);
+        $songs = OC_Media_Collection::getSongs(0, 0, $q);
+
+        /** Dummy Cache for album and artists ids to name **/
+        $art_ch = array();
+        $alb_ch = array();
+
+        $r = array('artist' => array(), 'album'=>array(), 'song' => array());
+        
+        foreach ($artists as $artist){
+            $r['artist'][] = array(
+                'name' => $artist['artist_name'],
+                'id' => 'artist_'.$artist['artist_id']
+            );
+            $albums = array_merge($albums, OC_Media_Collection::getAlbums($artist['artist_id']));
+            
+            $art_ch[$artist['artist_id']] = $artist['artist_name'];
+        }
+
+        foreach ($albums as $album){
+            $artist = OC_Media_Collection::getArtistName($album['album_artist']);
+            $r['album'][] = array(
+                'artist' => $artist,
+                //'averageRating' =>
+                //'userRating' =>
+                'coverArt' => 'album_'.$album['album_id'],
+                'id' => 'album_'.$album['album_id'],
+                'isDir' => true,
+                'parent' => $album['album_artist'],
+                'title' => $album['album_name'],
+                //'created' =>
+            );
+            $songs = array_merge($songs, OC_Media_Collection::getSongs(0,$album['album_id']));
+            $alb_ch[$album['album_id']] = $album['album_name'];
+        }
+
+        foreach ($songs as $song){
+            if (!isset($art_ch[$song['song_artist']])){
+                $art_ch[$song['song_artist']] = OC_Media_Collection::getArtistName($song['song_artist']);
+            }
+
+            if (!isset($alb_ch[$song['song_album']])){
+                $alb_ch[$song['song_album']] = OC_Media_Collection::getAlbumName($song['song_album']);
+            }
+            $r['song'][] = OC_MEDIA_SUBSONIC::modelSongToSubsonic($song, $art_ch[$song['song_artist']], $alb_ch[$song['song_album']]);
+        }
+
+        if (sizeof($r) > 0)
+            return array('searchResult2'=>$r);
+        else
+            return array('searchResult2'=>'');
+    }
+
+    private function modelSongToSubsonic($song, $artist, $album){
+        /***
+         * A song has too many fields to be stupidly typing
+         * it again and again..
+         */
+
+        return array(
+            'id' => $song['song_id'],
+            'parent' => 'album_'.$song['song_album'],
+            'title' => $song['song_name'],
+            'album' => $album,
+            'artist' => $artist,
+            'isDir' => false,
+            'coverArt' => 'album_'.$song['song_album'],
+            //'created' =>
+            'duration' => $song['song_length'],
+            'bitRate' => round($song['song_size'] / $song['song_length'] * 0.008),
+            'track' => $song['song_track'],
+            //'year' =>
+            //'genre' => 
+            'size' => $song['song_size'],
+            'suffix' => 'mp3',
+            'contentType' => 'audio/mpeg',
+            'isVideo' => false,
+            'path' => sprintf('%s/%s/%d - %s.mp3',$artist,$album,$song['song_track'],$song['song_name']),
+            'albumId' => $song['song_album'],
+            'artistId' => $song['song_artist'],
+            'type' => 'music'
+        );
     }
 }

@@ -18,6 +18,12 @@ try {
 		case 'getIndexes':
 			$response = $subsonic->getIndexes($_REQUEST);
 			break;
+		case 'stream':
+			$subsonic->stream($_REQUEST);
+			break;
+		case 'search2':
+			$response = $subsonic->search($_REQUEST);
+			break;
 		case 'getLicense':
 			break;
 		default:
