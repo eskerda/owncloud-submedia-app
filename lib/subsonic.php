@@ -231,17 +231,7 @@ class OC_MEDIA_SUBSONIC{
                         )
                     );
                     foreach ($albums as $album){
-                        $response['directory']['child'][] = array(
-                            'id' => 'album_'.$album['album_id'],
-                            'parent' => $id,
-                            'title' => $album['album_name'],
-                            'artist' => $artist,
-                            'isDir' => true,
-                            'coverArt' => 'album_'.$album['album_id'],
-                            //'created' => 
-                            //'userRating' =>
-                            //'averageRating' =>
-                        );
+                        $response['directory']['child'][] = OC_MEDIA_SUBSONIC::modelAlbumToSubsonic($album, $artist);
                     }
                     break;
                 default:
@@ -265,7 +255,13 @@ class OC_MEDIA_SUBSONIC{
     }
 
     function search ($query){
-        
+        /** Sorry for this messy function, Subsonic API search results are
+         *  THAT lousy. First, it looks for artists, albums and songs that
+         *  match a query.
+         *  Then, for _each_ of these artists, adds the full list of albums.
+         *  And then, for each of these albums, adds the full list of songs.
+         */
+
         if (!isset($query['query']))
             $q = '';
         else{
@@ -314,18 +310,10 @@ class OC_MEDIA_SUBSONIC{
         }
 
         foreach ($albums as $album){
-            $artist = OC_Media_Collection::getArtistName($album['album_artist']);
-            $r['album'][] = array(
-                'artist' => $artist,
-                //'averageRating' =>
-                //'userRating' =>
-                'coverArt' => 'album_'.$album['album_id'],
-                'id' => 'album_'.$album['album_id'],
-                'isDir' => true,
-                'parent' => $album['album_artist'],
-                'title' => $album['album_name'],
-                //'created' =>
-            );
+            if (!isset($art_ch[$album['album_artist']])){
+                $art_ch[$album['album_artist']] = OC_Media_Collection::getArtistName($album['album_artist']);
+            }
+            $r['album'][] = OC_MEDIA_SUBSONIC::modelAlbumToSubsonic($album, $art_ch[$album['album_artist']]);
             $songs = array_merge($songs, OC_Media_Collection::getSongs(0,$album['album_id']));
             $alb_ch[$album['album_id']] = $album['album_name'];
         }
@@ -345,6 +333,20 @@ class OC_MEDIA_SUBSONIC{
             return array('searchResult2'=>$r);
         else
             return array('searchResult2'=>'');
+    }
+
+    private function modelAlbumToSubsonic($album, $artist){
+        return array(
+                'artist' => $artist,
+                //'averageRating' =>
+                //'userRating' =>
+                'coverArt' => 'album_'.$album['album_id'],
+                'id' => 'album_'.$album['album_id'],
+                'isDir' => true,
+                'parent' => $album['album_artist'],
+                'title' => $album['album_name'],
+                //'created' =>
+        );
     }
 
     private function modelSongToSubsonic($song, $artist, $album){
