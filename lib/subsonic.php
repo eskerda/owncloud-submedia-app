@@ -70,7 +70,7 @@ class OC_MEDIA_SUBSONIC{
         $version = (isset($params['v']))?$params['v']:false;
         $client = (isset($params['c']))?$params['c']:false;
         $format = (isset($params['f']))?$params['f']:'xml';
-        
+        $callback = (isset($params['callback']))?$params['callback']:false;
         if (!$username || !$password || !$version || !$client){
             throw new Exception("Required string parameter not present", 10);
         }
@@ -187,6 +187,16 @@ class OC_MEDIA_SUBSONIC{
                 'id' => 'artist_'.$artist['artist_id'],
                 'name' => $artist['artist_name']);
         }
+        if ($this->format == 'json' || $this->format == 'jsonp'){
+            $letters = $response['indexes']['index'];
+            $response['indexes']['index'] = array();
+            foreach ($letters as $letter=>$artists){
+                $response['indexes']['index'][] = array(
+                    'name' => $letter,
+                    'artist' => $artists
+                );
+            }
+        }
         return $response;
     }
 
@@ -219,7 +229,6 @@ class OC_MEDIA_SUBSONIC{
                     break;
                 case 'artist':
                     $artist_id = $sid[1];
-
                     $artist = OC_Media_Collection::getArtistName($artist_id);
                     $albums = OC_Media_Collection::getAlbums($artist_id);
 

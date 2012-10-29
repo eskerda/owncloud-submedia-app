@@ -40,6 +40,9 @@ $tmpl = new OCP\Template("submedia", OC_Media_Subsonic::getFormat($_REQUEST));
 $tmpl->assign('response', $response);
 $tmpl->assign('action', $action);
 $tmpl->assign('response', $response);
+if (isset($_REQUEST['callback'])){
+	$tmpl->assign('callback', $_REQUEST['callback']);
+}
 
 if (isset($error)){
 	$tmpl->assign('error', $error);
