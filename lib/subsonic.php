@@ -246,10 +246,45 @@ class OC_MEDIA_SUBSONIC{
         if (!$id){
             throw new Exception('Required string parameter \'id\' not present', 10);
         }
-        if($song=OC_MEDIA_COLLECTION::getSong($id)){
-            OC_Util::setupFS($song["song_user"]);
-            header('Content-type: '.OC_Filesystem::getMimeType($song['song_path']));
-            header('Content-Length: '.$song['song_size']);
+        if ($song = OC_MEDIA_COLLECTION::getSong($id)) {
+            // Find a shared music file owner and path
+            if (strpos($song['song_path'], '/Shared/') === 0) {
+                $statement = OCP\DB::prepare(
+                    'SELECT uid_owner, file_source'
+                    . ' FROM *PREFIX*share'
+                    . ' WHERE share_with = :share_with'
+                    . ' AND file_target = :file_target'
+                    . ' LIMIT 1'
+                );
+                $results = $statement->execute(array(
+                    ':share_with' => $song['song_user'],
+                    ':file_target' => substr($song['song_path'], strlen('/Shared'))
+                ))->fetchAll();
+                if (count($results) > 0) {
+                    $fileId = $results[0]['file_source'];
+                    $userId = $results[0]['uid_owner'];
+                    $statement = OCP\DB::prepare(
+                        'SELECT path'
+                        . ' FROM *PREFIX*fscache'
+                        . ' WHERE id = :id'
+                        . ' AND user = :user'
+                        . ' LIMIT 1'
+                    );
+                    $results = $statement->execute(array(
+                        ':id' => $fileId,
+                        ':user' => $userId
+                    ))->fetchAll();
+                    if (count($results) > 0) {
+                        $filePath = $results[0]['path'];
+                        $song['song_user'] = $userId;
+                        $song['song_path'] = substr($filePath, strlen('/' . $userId . '/files'));
+                    }
+                }
+            }
+            // Send the music stream
+            OC_Util::setupFS($song['song_user']);
+            header('Content-type: ' . OC_Filesystem::getMimeType($song['song_path']));
+            header('Content-Length: ' . $song['song_size']);
             OC_Filesystem::readfile($song['song_path']);
         }
     }
