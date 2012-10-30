@@ -1,5 +1,8 @@
 <?php
 
+$isAllowAccessControl = true;
+$allowedAccessControlOrigins = '*'; // *(any) or space separated value
+
 $base = array(
 	'subsonic-response' => array(
 		'status' => $_['status'],
@@ -23,6 +26,10 @@ if (!isset($_['callback'])){
 } else {
 	header ("Content-Type: application/json;charset=UTF-8");
 }
+if ($isAllowAccessControl && !empty($allowedAccessControlOrigins)) {
+    header('Access-Control-Allow-Origin: ' . $allowedAccessControlOrigins, true);
+}
+
 	/**
 	while we wait for PHP 5.4, just use this
 	ugly replace to unescape slashes on url.
