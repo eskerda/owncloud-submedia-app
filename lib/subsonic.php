@@ -108,7 +108,6 @@ class OC_MEDIA_SUBSONIC{
                 OC_User::setUserId($users[0]['user_id']);
                 return true;
             }
-            return false;
         }
         return false;
     }
