@@ -205,20 +205,21 @@ class OC_MEDIA_SUBSONIC{
                 throw new Exception('Required string parameter \'id\' not present', 10);
             }
             $sid = split('_', $id);
+            $response = array(
+                'directory' => array(
+                    'id' => $id,
+                    'name' => '',
+                    'child' => array()
+                )
+            );
             switch($sid[0]){
                 case 'album':
                     $album_id = $sid[1];
 
                     $album = OC_Media_Collection::getAlbumName($album_id);
                     $songs = OC_Media_Collection::getSongs(0, $album_id);
-
-                    $response = array(
-                        'directory' => array(
-                            'id' => $id,
-                            'name' => $album,
-                            'child' => array()
-                        )
-                    );
+                    $response['directory']['name'] = $album;
+                    
                     foreach ($songs as $song){
                         if (!isset($artist)){
                             $artist = OC_Media_Collection::getArtistName($song['song_artist']);
@@ -230,14 +231,8 @@ class OC_MEDIA_SUBSONIC{
                     $artist_id = $sid[1];
                     $artist = OC_Media_Collection::getArtistName($artist_id);
                     $albums = OC_Media_Collection::getAlbums($artist_id);
+                    $response['directory']['name'] = $artist;
 
-                    $response = array(
-                        'directory' => array(
-                            'id'=>$id,
-                            'name'=>$artist,
-                            'child'=>array()
-                        )
-                    );
                     foreach ($albums as $album){
                         $response['directory']['child'][] = OC_MEDIA_SUBSONIC::modelAlbumToSubsonic($album, $artist);
                     }
@@ -245,13 +240,6 @@ class OC_MEDIA_SUBSONIC{
                 default:
                     // Return all albums
                     $albums = OC_Media_Collection::getAlbums();
-                    $response = array(
-                        'directory' => array(
-                            'id' => $id,
-                            'name' => '',
-                            'child' => array()
-                        )
-                    );
                     foreach($albums as $album){
                         $artist = OC_Media_Collection::getArtistName($album['album_artist']);
                         $response['directory']['child'][] = OC_MEDIA_SUBSONIC::modelAlbumToSubsonic($album, $artist);
