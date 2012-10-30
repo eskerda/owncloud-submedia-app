@@ -243,7 +243,19 @@ class OC_MEDIA_SUBSONIC{
                     }
                     break;
                 default:
-                    throw new Exception('I don\'t know what am I doing...',0);
+                    // Return all albums
+                    $albums = OC_Media_Collection::getAlbums();
+                    $response = array(
+                        'directory' => array(
+                            'id' => $id,
+                            'name' => '',
+                            'child' => array()
+                        )
+                    );
+                    foreach($albums as $album){
+                        $artist = OC_Media_Collection::getArtistName($album['album_artist']);
+                        $response['directory']['child'][] = OC_MEDIA_SUBSONIC::modelAlbumToSubsonic($album, $artist);
+                    }
             }
 
             return $response;
