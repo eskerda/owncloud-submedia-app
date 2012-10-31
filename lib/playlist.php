@@ -60,15 +60,11 @@ class OC_Media_Playlist {
 
     	$pid = OCP\DB::insertid('submedia_playlists');
 
-    	if (!$song_ids)
+    	if (OC_Media_Playlist::assign($uid, $pid, $song_ids)){
+    		OCP\DB::commit();
     		return $pid;
-    	else{
-    		if (OC_Media_Playlist::assign($uid, $pid, $song_ids)){
-    			OCP\DB::commit();
-    			return $pid;
-    		} else {
-    			return false;
-    		}
+    	} else {
+    		return false;
     	}
     }
 
@@ -76,8 +72,10 @@ class OC_Media_Playlist {
     	throw new Media_Playlist_Not_Allowed_Exception(':(');
     }
 
-    public static function assign($uid, $pid, $song_ids){
-
+    public static function assign($uid, $pid, $song_ids = false){
+    	if (!$song_ids || empty($song_ids))
+    		return true;
+    	
     	function arrayToCommas( $in ){
 			$init = '%s';
 			for ($i = 0; $i < sizeof($in); $i++){
