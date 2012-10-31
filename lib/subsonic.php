@@ -378,6 +378,37 @@ class OC_MEDIA_SUBSONIC{
             return array('searchResult2'=>'');
     }
 
+    function createPlaylist($query, $query_string){
+        // Yes.. Subsonic API expects &songId=1&songId=2&songId=3 
+        $params = $this->requestDupedParams($query_string);
+        
+        $playlist_id = (isset($query['playlistId']))?$query['playlistId']:false;
+        $name = (isset($query['name']))?$query['name']:false;
+        $song_ids = (isset($params['songId']))?$params['songId']:false;
+
+        if (!$name && !$playlist_id){
+            throw new Exception("Playlist ID or name must be specified.", 10);
+        }
+
+        try {
+            if ($playlist_id){
+                return OC_Media_Playlist::update($this->user, $playlist_id, $name, $song_ids);
+            } else {
+                return OC_Media_Playlist::add($this->user, $name, $song_ids);
+            }
+        /**
+         * Here we do a little jiggling around because of Subsonic error codes
+         * I am not really partidary of exceptions; in this case it seems
+         * logic to use them, but bubble them around the Playlist model
+         * hence, unrelating it from subsonic at all...
+         */
+        } catch (Media_Playlist_Not_Found_Exception $e) {
+            throw new Exception('Playlist not found: '.$playlist_id, 70);
+        } catch (Media_Playlist_Not_Allowed_Exception $e) {
+            throw new Exception('Permission denied for playlist '.$playlist_id, 50);
+        }
+    }
+
     private function modelAlbumToSubsonic($album, $artist){
         return array(
                 'artist' => $artist,
@@ -421,5 +452,17 @@ class OC_MEDIA_SUBSONIC{
             'artistId' => $song['song_artist'],
             'type' => 'music'
         );
+    }
+
+    private function requestDupedParams($query){
+        $query  = explode('&', $query);
+        $params = array();
+
+        foreach( $query as $param )
+        {
+          list($name, $value) = explode('=', $param);
+          $params[urldecode($name)][] = urldecode($value);
+        }
+        return $params;
     }
 }

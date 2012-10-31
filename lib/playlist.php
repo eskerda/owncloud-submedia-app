@@ -30,6 +30,46 @@ class OC_Media_Playlist {
      * @return array or false.
      */
     public static function all($uid) {
-        return array('hello'=>'world');
+    	$statement = OCP\DB::prepare(
+    		'SELECT * FROM `*PREFIX*submedia_playlists`'
+    		. ' WHERE userid = :user'
+    	);
+    	$results = $statement->execute(array(
+    		':user' => $uid
+    	))->fetchAll();
+    	return $results;
+    }
+
+    public static function add($uid, $name, $song_ids = false){
+    	$statement = OCP\DB::prepare(
+    		'INSERT INTO `*PREFIX*submedia_playlists`'
+    		. ' ( `name`, `userid` ) VALUES ( :name, :userid )'
+    	);
+    	$result = $statement->execute(array(
+    		':name' => $name,
+    		':userid' => $uid
+    	));
+    	
+    	if (!$result) {
+    		return false;
+    	}
+
+    	$pid = OCP\DB::insertid('submedia_playlists');
+
+    	if (!$song_ids)
+    		return $pid;
+    	else
+    		return OC_Media_Playlist::assign($uid, $pid, $song_ids);
+    }
+
+    public static function update($uid, $name, $song_ids){
+    	throw new Media_Playlist_Not_Allowed_Exception(':(');
+    }
+
+    public static function assign($uid, $pid, $song_ids){
+    	return true;
     }
 }
+
+class Media_Playlist_Not_Allowed_Exception extends Exception {}
+class Media_Playlist_Not_Found_Exception extends Exception {}

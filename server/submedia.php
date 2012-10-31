@@ -5,6 +5,7 @@ $action = $req_info['filename'];
 try {
 	$subsonic = new OC_Media_Subsonic($_REQUEST);
 	$response = array();
+	$userid = OC_User::getUser();
 	switch($action){
 		case 'ping':
 			// Pong >_<
@@ -25,6 +26,13 @@ try {
 			$response = $subsonic->search($_REQUEST);
 			break;
 		case 'getLicense':
+			break;
+		case 'getPlaylists':
+			$playlists = OC_Media_Playlist::all($userid);
+			print_r($playlists); die;
+			break;
+		case 'createPlaylist':
+			$response = $subsonic->createPlaylist($_REQUEST, $_SERVER['QUERY_STRING']);
 			break;
 		default:
 			// Look at my horse, my horse is amazing!
