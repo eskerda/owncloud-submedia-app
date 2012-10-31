@@ -453,6 +453,45 @@ class OC_MEDIA_SUBSONIC{
         }
     }
 
+    function getPlaylist($params){
+        $id = (isset($params['id']))?$params['id']:false;
+        if (!$id){
+            throw new Exception(
+                'Required int parameter \'id\' is not present', 10);
+        }
+
+        try{
+            $playlist = OC_Media_Playlist::find($this->user, $id);
+        } catch (Media_Playlist_Not_Allowed_Exception $e){
+            throw new Exception('Permission denied for playlist '.$id, 50);
+        }
+
+        $response = array(
+            'playlist' => array(
+                'id' => $playlist['playlist']['id'],
+                'songCount' => $playlist['playlist']['n_songs'],
+                'created' => $playlist['playlist']['created']
+            ),
+            'entry' => array()
+        );
+
+        $totalTime = 0;
+        foreach ($playlist['songs'] as $song){
+            $artist = OC_Media_Collection::getArtistName($song['song_artist']);
+            $album = OC_Media_Collection::getAlbumName($song['song_album']);
+            $response['entry'][] = OC_MEDIA_SUBSONIC::modelSongToSubsonic($song, $artist, $album);
+            $totalTime+=$song['song_length'];
+        }
+
+        $response['playlist']['duration'] = $totalTime;
+
+        if ($this->format == 'json' || $this->format == 'jsonp'){
+            $response['playlist']['entry'] = $response['entry'];
+            unset($response['entry']);
+        }
+        return $response;    
+    }
+
     private function modelAlbumToSubsonic($album, $artist){
         return array(
                 'artist' => $artist,

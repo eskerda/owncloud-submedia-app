@@ -35,6 +35,9 @@ try {
 			break;
 		case 'deletePlaylist':
 			$response = $subsonic->deletePlaylist($_REQUEST);
+			break;
+		case 'getPlaylist':
+			$response = $subsonic->getPlaylist($_REQUEST);
 		default:
 			// Look at my horse, my horse is amazing!
 	}

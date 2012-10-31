@@ -132,6 +132,54 @@ class OC_Media_Playlist {
         return false;
     }
 
+    public static function find($uid, $pid) {
+        if (!OC_Media_Playlist::isOwner($uid, $pid)) {
+            throw new Media_Playlist_Not_Allowed_Exception(':(');
+        }
+
+        $statement = OCP\DB::prepare(
+            'SELECT sp.`id`,sp.`name`, sp.`created` '
+            . ' FROM `*PREFIX*submedia_playlists` sp'
+            . ' WHERE id = :id AND userid = :userid'
+        );
+        $playlist = $statement->execute(array(
+            ':id' => $pid,
+            ':userid' => $uid
+        ))->fetch();
+
+        $songs = self::getSongs($pid);
+
+        // The query is already done so no problem using code here..
+        $playlist['n_songs'] = count($songs);
+
+        /* We could enter into the song data model and extract it
+         * ourselves using a join but there's already a getSong in
+         * the lib_collection and so, we use it..
+         */
+        $playlist = array(
+            'playlist' => $playlist,
+            'songs' => array()
+        );
+        foreach ($songs as $song){
+            $playlist['songs'][] = OC_Media_Collection::getSong($song);
+        }
+        return $playlist;
+    }
+
+    public static function getSongs($pid) {
+        $statement = OCP\DB::prepare(
+            'SELECT `song_id`, `playlist_id` FROM *PREFIX*submedia_playlists_songs'
+            . ' WHERE `playlist_id` = :playlist_id'
+        );
+
+        $rows = $statement->execute(array(':playlist_id' => $pid))->fetchAll();
+        $songs = array();
+        foreach ($rows as $row){
+            $songs[] = $row['song_id'];
+        }
+        return $songs;
+    }
+
     public static function assign($uid, $pid, array $song_ids = null) {
         OCP\DB::beginTransaction();
         $del_statement = OCP\DB::prepare(
