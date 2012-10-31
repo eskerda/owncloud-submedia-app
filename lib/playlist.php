@@ -31,7 +31,10 @@ class OC_Media_Playlist {
      */
     public static function all($uid) {
     	$statement = OCP\DB::prepare(
-    		'SELECT * FROM `*PREFIX*submedia_playlists`'
+    		'SELECT sp.`id`,sp.`name`, '
+    		. 	'(SELECT COUNT(*) FROM `*PREFIX*submedia_playlists_songs` sps'
+    		.	' WHERE sps.`playlist_id` = sp.`id`) as n_songs'
+    		. ' FROM `*PREFIX*submedia_playlists` sp'
     		. ' WHERE userid = :user'
     	);
     	$results = $statement->execute(array(
