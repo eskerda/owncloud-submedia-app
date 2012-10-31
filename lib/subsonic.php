@@ -389,6 +389,7 @@ class OC_MEDIA_SUBSONIC{
                 'owner' => $this->user,
                 'songCount' => $playlist['n_songs'],
                 'duration' => 0,
+                'public' => false,
                 'created' => $playlist['created']
             );
         }

@@ -68,8 +68,43 @@ class OC_Media_Playlist {
     	}
     }
 
-    public static function update($uid, $name, $song_ids){
-    	throw new Media_Playlist_Not_Allowed_Exception(':(');
+    public static function isOwner($uid, $pid){
+        $statement = OCP\DB::prepare(
+            'SELECT COUNT(*) as count FROM *PREFIX*submedia_playlists'
+            .' WHERE `userid` = :user AND `id` = :pid'
+        );
+        $result = $statement->execute(array(
+            ':user' => $uid,
+            ':pid' => $pid
+        ))->fetchAll();
+        return $result[0]['count'] > 0;
+    }
+
+    public static function update($uid, $pid, $name, $song_ids){
+        if (!OC_Media_Playlist::isOwner($uid, $pid))
+    	   throw new Media_Playlist_Not_Allowed_Exception(':(');
+        
+        OCP\DB::beginTransaction();
+        if ($name){
+            $statement = OCP\DB::prepare(
+            'UPDATE *PREFIX*submedia_playlists'
+            .' SET `name` = :name'
+            .' WHERE `id` = :pid'
+            );
+            $result = $statement->execute(array(
+                ':name' => $name,
+                ':pid' => $pid
+            ));
+            if (!$result)
+                return false;
+        }
+        
+        if (OC_Media_Playlist::assign($uid, $pid, $song_ids)){
+            OCP\DB::commit();
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public static function assign($uid, $pid, $song_ids = false){
