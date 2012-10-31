@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ownCloud - Media Playlists
  *
@@ -24,168 +25,150 @@
  * This class manages our playlists.
  */
 class OC_Media_Playlist {
+
+    public static $defaultPlaylist = 'MyPlaylist';
+
     /**
      * @brief Returns the list of playlists for a specific user.
      * @param string $uid
      * @return array or false.
      */
     public static function all($uid) {
-    	$statement = OCP\DB::prepare(
-    		'SELECT sp.`id`,sp.`name`, sp.`created`, '
-    		. 	'(SELECT COUNT(*) FROM `*PREFIX*submedia_playlists_songs` sps'
-    		.	' WHERE sps.`playlist_id` = sp.`id`) as n_songs'
-    		. ' FROM `*PREFIX*submedia_playlists` sp'
-    		. ' WHERE userid = :user'
-    	);
-    	$results = $statement->execute(array(
-    		':user' => $uid
-    	))->fetchAll();
-    	return $results;
-    }
-
-    public static function add($uid, $name, $song_ids = false){
-    	OCP\DB::beginTransaction();
-    	$statement = OCP\DB::prepare(
-    		'INSERT INTO `*PREFIX*submedia_playlists`'
-    		. ' ( `name`, `userid` ) VALUES ( :name, :userid )'
-    	);
-    	$result = $statement->execute(array(
-    		':name' => $name,
-    		':userid' => $uid
-    	));
-    	
-    	if (!$result) {
-    		return false;
-    	}
-
-    	$pid = OCP\DB::insertid('submedia_playlists');
-
-    	if (!$song_ids || empty($song_ids) || OC_Media_Playlist::assign($uid, $pid, $song_ids)){
-    		OCP\DB::commit();
-    		return $pid;
-    	} else {
-    		return false;
-    	}
-    }
-
-    public static function isOwner($uid, $pid){
         $statement = OCP\DB::prepare(
-            'SELECT COUNT(*) as count FROM *PREFIX*submedia_playlists'
-            .' WHERE `userid` = :user AND `id` = :pid'
+            'SELECT sp.`id`,sp.`name`, sp.`created`, '
+            . '(SELECT COUNT(*) FROM `*PREFIX*submedia_playlists_songs` sps'
+            . ' WHERE sps.`playlist_id` = sp.`id`) as n_songs'
+            . ' FROM `*PREFIX*submedia_playlists` sp'
+            . ' WHERE userid = :userid'
+        );
+        $results = $statement->execute(array(
+            ':userid' => $uid
+        ))->fetchAll();
+        return $results;
+    }
+
+    public static function add($uid, $name = '', array $song_ids = null) {
+        if (!$name) {
+            $name = self::$defaultPlaylist;
+        }
+
+        OCP\DB::beginTransaction();
+        $statement = OCP\DB::prepare(
+            'INSERT INTO `*PREFIX*submedia_playlists`'
+            . ' (`userid`, `name`) VALUES (:userid, :name)'
         );
         $result = $statement->execute(array(
-            ':user' => $uid,
-            ':pid' => $pid
+            ':userid' => $uid,
+            ':name' => $name
+        ));
+        OCP\DB::commit();
+
+        if ($result && $song_ids) {
+            $pid = OCP\DB::insertid('submedia_playlists');
+            if (self::assign($uid, $pid, $song_ids)) {
+                return $pid;
+            }
+        }
+        return false;
+    }
+
+    public static function isOwner($uid, $pid) {
+        $statement = OCP\DB::prepare(
+            'SELECT COUNT(*) as count FROM *PREFIX*submedia_playlists'
+            . ' WHERE `id` = :id AND `userid` = :userid'
+        );
+        $result = $statement->execute(array(
+            ':id' => $pid,
+            ':userid' => $uid
         ))->fetchAll();
         return $result[0]['count'] > 0;
     }
 
-    public static function update($uid, $pid, $name, $song_ids){
-        if (!OC_Media_Playlist::isOwner($uid, $pid))
-    	   throw new Media_Playlist_Not_Allowed_Exception(':(');
-        
-        OCP\DB::beginTransaction();
-        if ($name){
-            $statement = OCP\DB::prepare(
-            'UPDATE *PREFIX*submedia_playlists'
-            .' SET `name` = :name'
-            .' WHERE `id` = :pid'
-            );
-            $result = $statement->execute(array(
-                ':name' => $name,
-                ':pid' => $pid
-            ));
-            if (!$result)
-                return false;
-        }
-        
-        if (!$song_ids || empty($song_ids) || OC_Media_Playlist::assign($uid, $pid, $song_ids)){
-            OCP\DB::commit();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public static function delete($uid, $pid){
-        if (!OC_Media_Playlist::isOwner($uid, $pid)){
+    public static function update($uid, $pid, $name = '', array $song_ids = null) {
+        if (!self::isOwner($uid, $pid)) {
             throw new Media_Playlist_Not_Allowed_Exception(':(');
         }
-        OCP\DB::beginTransaction();
-        // Clear all records for this playlist
-        if (!OC_Media_Playlist::assign($uid, $pid, array()))
-            return false;
 
-        $statement = OCP\DB::prepare(
-            'DELETE FROM *PREFIX*submedia_playlists'
-            .' WHERE `id` = :pid'
-        );
-        if (!$statement->execute(array(':pid' => $pid))){
-            return false;
+        if ($name){
+            OCP\DB::beginTransaction();
+            $statement = OCP\DB::prepare(
+                'UPDATE *PREFIX*submedia_playlists'
+                . ' SET `name` = :name'
+                . ' WHERE `id` = :id'
+            );
+            $result = $statement->execute(array(
+                ':id' => $pid,
+                ':name' => $name
+            ));
+            OCP\DB::commit();
+            if ($result && $song_ids && self::assign($uid, $pid, $song_ids)) {
+                return true;
+            }
         }
-        OCP\DB::commit();
-        return true;
+        return false;
     }
 
-    public static function assign($uid, $pid, $song_ids = false){
-    	function arrayToCommas( $in ){
-			$init = '%s';
-			for ($i = 0; $i < sizeof($in); $i++){
-				if ($i < sizeof($in) - 1)
-					$rule = ',%s';
-				else
-					$rule = '';
-				$init = sprintf($init, $in[$i].$rule);
-			}
-			return $init;
-		}
+    public static function delete($uid, $pid) {
+        if (!self::isOwner($uid, $pid)){
+            throw new Media_Playlist_Not_Allowed_Exception(':(');
+        }
 
-        /* AFAIK rails-style frameworks are doing HABTM 
-         * deleting all references and adding them again.
-         */
+        // Clear all records for this playlist
+        if (!self::assign($uid, $pid, array())) {
+            return false;
+        }
+
+        OCP\DB::beginTransaction();
+        $statement = OCP\DB::prepare(
+            'DELETE FROM *PREFIX*submedia_playlists'
+            . ' WHERE `id` = :id'
+        );
+        $result = $statement->execute(array(':id' => $pid));
+        OCP\DB::commit();
+        if ($result) {
+            return true;
+        }
+        return false;
+    }
+
+    public static function assign($uid, $pid, array $song_ids = null) {
+        OCP\DB::beginTransaction();
         $del_statement = OCP\DB::prepare(
             'DELETE FROM `*PREFIX*submedia_playlists_songs`'
-            . 'WHERE `playlist_id` = :pid'
+            . 'WHERE `playlist_id` = :playlist_id'
         );
-        $del_statement->execute(array(':pid'=> $pid));
+        $del_statement->execute(array(':playlist_id'=> $pid));
+        OCP\DB::commit();
 
-        if (!$song_ids || empty($song_ids))
-            return true;
+        if ($song_ids !== null) {
+            $statement = OCP\DB::prepare(
+                'SELECT COUNT(*) AS count FROM `*PREFIX*media_songs`'
+                . ' WHERE `song_user` = :song_user'
+                . ' AND `song_id` IN (' . implode(',', $song_ids) . ')'
+            );
+            $songs_exist_and_owned = $statement->execute(array(
+                ':song_user' => $uid
+            ))->fetchAll();
 
+            if ($songs_exist_and_owned[0]['count'] != count($song_ids)) {
+                throw new Media_Playlist_Not_Found_Exception(':8');
+            }
 
-    	// Check if the songs do exist and are owned by the pid
-    	
-    	/* Does PDO allow arrays in IN statements?
-    	 * so far, nope
-    	 */
-    	$statement = OCP\DB::prepare(
-    		'SELECT COUNT(*) AS count FROM `*PREFIX*media_songs`'
-    		.' WHERE `song_user` = :user AND'
-    		.' `song_id` IN ('.arrayToCommas($song_ids).')'
-    	);
-    	$songs_exist_and_owned = $statement->execute(array(
-    		':user' => $uid
-    	))->fetchAll();
-    	
-    	if ($songs_exist_and_owned[0]['count'] != sizeof($song_ids)){
-    		throw new Media_Playlist_Not_Found_Exception(':8');
-    	}
-    	
-        $ins_statement = OCP\DB::prepare(
-    		'INSERT INTO `*PREFIX*submedia_playlists_songs`'
-    		. '(`playlist_id`, `song_id`) VALUES (:pid, :sid)'
-    	);
-    	try {
-    		foreach ($song_ids as $song){
-    			$ins_statement->execute(array(
-    				':pid' => $pid,
-    				':sid' => $song
-    			));
-    		}
-    	} catch (PDOException $e) {
-    		return false;
-    	}
-    	return true;
+            OCP\DB::beginTransaction();
+            $ins_statement = OCP\DB::prepare(
+                'INSERT INTO `*PREFIX*submedia_playlists_songs`'
+                . '(`playlist_id`, `song_id`) VALUES (:playlist_id, :song_id)'
+            );
+            foreach ($song_ids as $song) {
+                $ins_statement->execute(array(
+                    ':playlist_id' => $pid,
+                    ':song_id' => $song
+                ));
+            }
+            OCP\DB::commit();
+        }
+
+        return true;
     }
 }
 
