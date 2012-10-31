@@ -55,11 +55,12 @@ class OC_Media_Playlist {
         OCP\DB::beginTransaction();
         $statement = OCP\DB::prepare(
             'INSERT INTO `*PREFIX*submedia_playlists`'
-            . ' (`userid`, `name`) VALUES (:userid, :name)'
+            . ' (`userid`, `name`, `created`) VALUES (:userid, :name, :created)'
         );
         $result = $statement->execute(array(
             ':userid' => $uid,
-            ':name' => $name
+            ':name' => $name,
+            ':created' => date('Y-m-d H:i:s')
         ));
         OCP\DB::commit();
 
