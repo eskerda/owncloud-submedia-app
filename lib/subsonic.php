@@ -378,6 +378,35 @@ class OC_MEDIA_SUBSONIC{
             return array('searchResult2'=>'');
     }
 
+    function getPlaylists(){
+        $playlists = OC_Media_Playlist::all($this->user);
+
+        $subdata = array();
+        foreach($playlists as $playlist){
+            $subdata[] = array(
+                'id' => $playlist['id'],
+                'name' => $playlist['name'],
+                'owner' => $this->user,
+                'songCount' => $playlist['n_songs'],
+                'duration' => 0,
+                'created' => $playlist['created']
+            );
+        }
+        switch ($this->format){
+            case 'json':
+            case 'jsonp':
+                return array(
+                    'playlists' => array(
+                        'playlist' => $subdata
+                    )
+                );
+            default:
+                return array(
+                    'playlists' => $subdata
+                );
+        }
+    }
+
     function createPlaylist($query, $query_string){
         // Yes.. Subsonic API expects &songId=1&songId=2&songId=3 
         $params = $this->requestDupedParams($query_string);

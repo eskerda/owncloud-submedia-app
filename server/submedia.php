@@ -28,8 +28,7 @@ try {
 		case 'getLicense':
 			break;
 		case 'getPlaylists':
-			$playlists = OC_Media_Playlist::all($userid);
-			print_r($playlists); die;
+			$response = $subsonic->getPlaylists();
 			break;
 		case 'createPlaylist':
 			$response = $subsonic->createPlaylist($_REQUEST, $_SERVER['QUERY_STRING']);
