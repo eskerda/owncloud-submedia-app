@@ -44,6 +44,7 @@ class OC_Media_Playlist {
     }
 
     public static function add($uid, $name, $song_ids = false){
+    	OCP\DB::beginTransaction();
     	$statement = OCP\DB::prepare(
     		'INSERT INTO `*PREFIX*submedia_playlists`'
     		. ' ( `name`, `userid` ) VALUES ( :name, :userid )'
@@ -61,8 +62,14 @@ class OC_Media_Playlist {
 
     	if (!$song_ids)
     		return $pid;
-    	else
-    		return OC_Media_Playlist::assign($uid, $pid, $song_ids);
+    	else{
+    		if (OC_Media_Playlist::assign($uid, $pid, $song_ids)){
+    			OCP\DB::commit();
+    			return $pid;
+    		} else {
+    			return false;
+    		}
+    	}
     }
 
     public static function update($uid, $name, $song_ids){
@@ -70,6 +77,58 @@ class OC_Media_Playlist {
     }
 
     public static function assign($uid, $pid, $song_ids){
+
+    	function arrayToCommas( $in ){
+			$init = '%s';
+			for ($i = 0; $i < sizeof($in); $i++){
+				if ($i < sizeof($in) - 1)
+					$rule = ',%s';
+				else
+					$rule = '';
+				$init = sprintf($init, $in[$i].$rule);
+			}
+			return $init;
+		}
+    	// Check if the songs do exist and are owned by the pid
+    	
+    	/* Does PDO allow arrays in IN statements?
+    	 * so far, nope
+    	 */
+    	$statement = OCP\DB::prepare(
+    		'SELECT COUNT(*) AS count FROM `*PREFIX*media_songs`'
+    		.' WHERE `song_user` = :user AND'
+    		.' `song_id` IN ('.arrayToCommas($song_ids).')'
+    	);
+    	$songs_exist_and_owned = $statement->execute(array(
+    		':user' => $uid
+    	))->fetchAll();
+    	
+    	if ($songs_exist_and_owned[0]['count'] != sizeof($song_ids)){
+    		throw new Media_Playlist_Not_Found_Exception(':8');
+    	}
+    	/* AFAIK rails-style frameworks are doing HABTM 
+    	 * deleting all references and adding them again.
+		 */
+    	$del_statement = OCP\DB::prepare(
+    		'DELETE FROM `*PREFIX*submedia_playlists_songs`'
+    		. 'WHERE `playlist_id` = :pid'
+    	);
+    	$del_statement->execute(array(':pid'=> $pid));
+
+    	$ins_statement = OCP\DB::prepare(
+    		'INSERT INTO `*PREFIX*submedia_playlists_songs`'
+    		. '(`playlist_id`, `song_id`) VALUES (:pid, :sid)'
+    	);
+    	try {
+    		foreach ($song_ids as $song){
+    			$ins_statement->execute(array(
+    				':pid' => $pid,
+    				':sid' => $song
+    			));
+    		}
+    	} catch (PDOException $e) {
+    		return false;
+    	}
     	return true;
     }
 }
