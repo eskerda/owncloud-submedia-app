@@ -60,7 +60,7 @@ class OC_Media_Playlist {
 
     	$pid = OCP\DB::insertid('submedia_playlists');
 
-    	if (OC_Media_Playlist::assign($uid, $pid, $song_ids)){
+    	if (!$song_ids || empty($song_ids) || OC_Media_Playlist::assign($uid, $pid, $song_ids)){
     		OCP\DB::commit();
     		return $pid;
     	} else {
@@ -99,7 +99,7 @@ class OC_Media_Playlist {
                 return false;
         }
         
-        if (OC_Media_Playlist::assign($uid, $pid, $song_ids)){
+        if (!$song_ids || empty($song_ids) || OC_Media_Playlist::assign($uid, $pid, $song_ids)){
             OCP\DB::commit();
             return true;
         } else {
@@ -107,10 +107,27 @@ class OC_Media_Playlist {
         }
     }
 
+    public static function delete($uid, $pid){
+        if (!OC_Media_Playlist::isOwner($uid, $pid)){
+            throw new Media_Playlist_Not_Allowed_Exception(':(');
+        }
+        OCP\DB::beginTransaction();
+        // Clear all records for this playlist
+        if (!OC_Media_Playlist::assign($uid, $pid, array()))
+            return false;
+
+        $statement = OCP\DB::prepare(
+            'DELETE FROM *PREFIX*submedia_playlists'
+            .' WHERE `id` = :pid'
+        );
+        if (!$statement->execute(array(':pid' => $pid))){
+            return false;
+        }
+        OCP\DB::commit();
+        return true;
+    }
+
     public static function assign($uid, $pid, $song_ids = false){
-    	if (!$song_ids || empty($song_ids))
-    		return true;
-    	
     	function arrayToCommas( $in ){
 			$init = '%s';
 			for ($i = 0; $i < sizeof($in); $i++){
@@ -122,6 +139,20 @@ class OC_Media_Playlist {
 			}
 			return $init;
 		}
+
+        /* AFAIK rails-style frameworks are doing HABTM 
+         * deleting all references and adding them again.
+         */
+        $del_statement = OCP\DB::prepare(
+            'DELETE FROM `*PREFIX*submedia_playlists_songs`'
+            . 'WHERE `playlist_id` = :pid'
+        );
+        $del_statement->execute(array(':pid'=> $pid));
+
+        if (!$song_ids || empty($song_ids))
+            return true;
+
+
     	// Check if the songs do exist and are owned by the pid
     	
     	/* Does PDO allow arrays in IN statements?
@@ -139,16 +170,8 @@ class OC_Media_Playlist {
     	if ($songs_exist_and_owned[0]['count'] != sizeof($song_ids)){
     		throw new Media_Playlist_Not_Found_Exception(':8');
     	}
-    	/* AFAIK rails-style frameworks are doing HABTM 
-    	 * deleting all references and adding them again.
-		 */
-    	$del_statement = OCP\DB::prepare(
-    		'DELETE FROM `*PREFIX*submedia_playlists_songs`'
-    		. 'WHERE `playlist_id` = :pid'
-    	);
-    	$del_statement->execute(array(':pid'=> $pid));
-
-    	$ins_statement = OCP\DB::prepare(
+    	
+        $ins_statement = OCP\DB::prepare(
     		'INSERT INTO `*PREFIX*submedia_playlists_songs`'
     		. '(`playlist_id`, `song_id`) VALUES (:pid, :sid)'
     	);

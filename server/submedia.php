@@ -33,6 +33,8 @@ try {
 		case 'createPlaylist':
 			$response = $subsonic->createPlaylist($_REQUEST, $_SERVER['QUERY_STRING']);
 			break;
+		case 'deletePlaylist':
+			$response = $subsonic->deletePlaylist($_REQUEST);
 		default:
 			// Look at my horse, my horse is amazing!
 	}

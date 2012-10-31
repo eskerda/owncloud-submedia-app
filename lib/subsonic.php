@@ -439,6 +439,20 @@ class OC_MEDIA_SUBSONIC{
         }
     }
 
+    function deletePlaylist($params){
+        $id = (isset($params['id']))?$params['id']:false;
+
+        if (!$id){
+            throw new Exception(
+                'Required int parameter \'id\' is not present', 10);
+        }
+        try{
+            OC_Media_Playlist::delete($this->user, $id);
+        } catch (Media_Playlist_Not_Allowed_Exception $e){
+            throw new Exception('Permission denied for playlist '.$id, 50);
+        }
+    }
+
     private function modelAlbumToSubsonic($album, $artist){
         return array(
                 'artist' => $artist,
