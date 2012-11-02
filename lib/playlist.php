@@ -176,15 +176,7 @@ class OC_Media_Playlist {
     }
 
     public static function assign($uid, $pid, array $song_ids = null) {
-        OCP\DB::beginTransaction();
-        $del_statement = OCP\DB::prepare(
-            'DELETE FROM `*PREFIX*submedia_playlists_songs`'
-            . 'WHERE `playlist_id` = :playlist_id'
-        );
-        $del_result = $del_statement->execute(array(':playlist_id' => $pid));
-        OCP\DB::commit();
-
-        if ($del_result && $song_ids) {
+        if ($song_ids) {
             $statement = OCP\DB::prepare(
                 'SELECT COUNT(*) AS count FROM `*PREFIX*media_songs`'
                 . ' WHERE `song_user` = :song_user'
@@ -199,6 +191,11 @@ class OC_Media_Playlist {
             }
 
             OCP\DB::beginTransaction();
+            $del_statement = OCP\DB::prepare(
+                'DELETE FROM `*PREFIX*submedia_playlists_songs`'
+                . 'WHERE `playlist_id` = :playlist_id'
+            );
+            $del_statement->execute(array(':playlist_id' => $pid));
             $ins_statement = OCP\DB::prepare(
                 'INSERT INTO `*PREFIX*submedia_playlists_songs`'
                 . '(`playlist_id`, `song_id`) VALUES (:playlist_id, :song_id)'
@@ -212,7 +209,12 @@ class OC_Media_Playlist {
             OCP\DB::commit();
             return true;
         }
-        else if ($del_result) {
+        else {
+            $del_statement = OCP\DB::prepare(
+                'DELETE FROM `*PREFIX*submedia_playlists_songs`'
+                . 'WHERE `playlist_id` = :playlist_id'
+            );
+            $del_statement->execute(array(':playlist_id' => $pid));
             return true;
         }
         return false;
