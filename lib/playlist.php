@@ -99,10 +99,9 @@ class OC_Media_Playlist {
                 ':name' => $name
             ));
             OCP\DB::commit();
-            if ($result && $song_ids && self::assign($uid, $pid, $song_ids)) {
-                return true;
-            }
         }
+        if ($song_ids && self::assign($uid, $pid, $song_ids))
+            return true;
         return false;
     }
 
