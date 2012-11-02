@@ -414,7 +414,7 @@ class OC_MEDIA_SUBSONIC{
         
         $playlist_id = (isset($query['playlistId']))?$query['playlistId']:false;
         $name = (isset($query['name']))?$query['name']:false;
-        $song_ids = (isset($params['songId']))?$params['songId']:false;
+        $song_ids = (isset($params['songId']))?$params['songId']:array();
 
         if (!$name && !$playlist_id){
             throw new Exception("Playlist ID or name must be specified.", 10);
