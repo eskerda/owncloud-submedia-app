@@ -52,6 +52,8 @@ class OC_MEDIA_SUBSONIC{
     var $client = false;
     var $format = 'xml';
 
+    protected static $data_path = 'apps/submedia/lib/data/';
+
     public static $formatWhiteList = array(
         'xml','json','jsonp'
     );
@@ -491,6 +493,68 @@ class OC_MEDIA_SUBSONIC{
         }
         return $response;    
     }
+
+    function outputCoverArt($params){
+        $lastfm_key = "644ce3b9599de151b83f69eb1b420a1e";
+
+        $id = (isset($params['id']))?split('_',$params['id']):false;
+        $size = (
+            isset($params['size']) && 
+            intval($params['size']) > 1)?intval($params['size']):200;
+        
+        if (!$id){
+            throw new Exception('Required string parameter \'id\' not present', 10);
+        }
+        
+        if ($size > 500)
+            $size = 500;
+
+        if (sizeof($id) > 1)
+            $album_id = $id[1];
+        else
+            $album_id = $id[0];
+
+
+        $album_name = OC_Media_Collection::getAlbumName($album_id);
+        $songs = OC_Media_Collection::getSongs(0, $album_id);
+        $artist_name = OC_Media_Collection::getArtistName($songs[0]['song_artist']);
+
+        $lastFm = new OC_Media_LastFM($lastfm_key);
+
+        try{
+            $album_info = $lastFm::getAlbumInfo($artist_name, $album_name);
+            $xml = simplexml_load_string($album_info);
+            $image_url = (string)$xml->album->image[3];
+
+        } catch (Exception $e){
+            header("HTTP/1.0 404 Not Found");
+            $image_url = self::$data_path.'defaultcover.png';
+        }
+        $image_meta = getimagesize($image_url);
+        switch($image_meta['mime']){
+            case 'image/jpeg':
+                $img = ImageCreateFromJPEG($image_url);
+                break;
+            case 'image/png':
+                $img = ImageCreateFromPNG($image_url);
+                break;
+            default:
+                throw new Exception('Internal server error', 0);
+        }
+        $thumb = imagecreatetruecolor($size, $size);
+        imagecopyresized($thumb, $img, 0, 0, 0, 0, $size, $size, $image_meta[0], $image_meta[1]);
+        header('Content-type: '.$image_meta['mime']);
+        switch($image_meta['mime']){
+            case 'image/jpeg':
+                imagejpeg($thumb);
+                break;
+            case 'image/png':
+                imagepng($thumb);
+                break;
+        }
+        exit();
+    }
+        
 
     private function modelAlbumToSubsonic($album, $artist){
         return array(
