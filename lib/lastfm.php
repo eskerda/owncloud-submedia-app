@@ -32,7 +32,7 @@ class OC_Media_LastFM{
 	}
 
 	public static function getAlbumInfo($artistName, $albumName){
-		$url = sprintf(self::$root.self::$album_info_url,self::$api_key,urlencode($artistName),urlencode($albumName));
+		$url = sprintf(self::$root.self::$album_info_url,self::$api_key,urlencode(html_entity_decode($artistName)),urlencode(html_entity_decode($albumName)));
 		$info = file_get_contents($url);
 		if ($info == ""){
 			throw new Exception("not found");
