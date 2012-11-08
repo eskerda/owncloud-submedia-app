@@ -1,6 +1,4 @@
 <?php
-// Check if we are a user
-OCP\User::checkLoggedIn();
 OCP\App::checkAppEnabled('media');
 OCP\App::checkAppEnabled('submedia');
 // only need filesystem apps
