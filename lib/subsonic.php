@@ -202,8 +202,8 @@ class OC_MEDIA_SUBSONIC{
     }
 
     function getMusicDirectory($params){
-            $id = (isset($params['id']))?$params['id']:false;
-            if (!$id){
+            $id = (isset($params['id']))?$params['id']:null;
+            if (is_null($id)){
                 throw new Exception('Required string parameter \'id\' not present', 10);
             }
             $sid = split('_', $id);
@@ -558,14 +558,14 @@ class OC_MEDIA_SUBSONIC{
 
     private function modelAlbumToSubsonic($album, $artist){
         return array(
-                'artist' => $artist,
+                'artist' => html_entity_decode($artist),
                 //'averageRating' =>
                 //'userRating' =>
                 'coverArt' => 'album_'.$album['album_id'],
                 'id' => 'album_'.$album['album_id'],
                 'isDir' => true,
                 'parent' => $album['album_artist'],
-                'title' => $album['album_name'],
+                'title' => html_entity_decode($album['album_name']),
                 //'created' =>
         );
     }
@@ -579,9 +579,9 @@ class OC_MEDIA_SUBSONIC{
         return array(
             'id' => $song['song_id'],
             'parent' => 'album_'.$song['song_album'],
-            'title' => $song['song_name'],
-            'album' => $album,
-            'artist' => $artist,
+            'title' => html_entity_decode($song['song_name']),
+            'album' => html_entity_decode($album),
+            'artist' => html_entity_decode($artist),
             'isDir' => false,
             'coverArt' => 'album_'.$song['song_album'],
             //'created' =>
