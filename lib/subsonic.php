@@ -206,7 +206,7 @@ class OC_MEDIA_SUBSONIC{
             if (is_null($id)){
                 throw new Exception('Required string parameter \'id\' not present', 10);
             }
-            $sid = split('_', $id);
+            $sid = explode('_', $id);
             $response = array(
                 'directory' => array(
                     'id' => $id,
@@ -497,7 +497,7 @@ class OC_MEDIA_SUBSONIC{
     function outputCoverArt($params){
         $lastfm_key = "644ce3b9599de151b83f69eb1b420a1e";
 
-        $id = (isset($params['id']))?split('_',$params['id']):false;
+        $id = (isset($params['id']))?explode('_',$params['id']):false;
         $size = (
             isset($params['size']) && 
             intval($params['size']) > 1)?intval($params['size']):200;
