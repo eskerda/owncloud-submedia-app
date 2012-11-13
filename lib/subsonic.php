@@ -288,6 +288,7 @@ class OC_MEDIA_SUBSONIC{
                         $filePath = $results[0]['path'];
                         $song['song_user'] = $userId;
                         $song['song_path'] = substr($filePath, strlen('/' . $userId . '/files'));
+                        OC_Filesystem::chroot($userId . '/files');
                     }
                 }
             }
