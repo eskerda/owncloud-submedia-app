@@ -31,7 +31,7 @@ try {
 			$response = $subsonic->getPlaylists();
 			break;
 		case 'createPlaylist':
-			$response = $subsonic->createPlaylist($_REQUEST, $_SERVER['QUERY_STRING']);
+			$subsonic->createPlaylist($_REQUEST, $_SERVER['QUERY_STRING']);
 			break;
 		case 'deletePlaylist':
 			$response = $subsonic->deletePlaylist($_REQUEST);
