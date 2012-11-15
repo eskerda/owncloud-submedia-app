@@ -3,6 +3,13 @@
 $isAllowAccessControl = true;
 $allowedAccessControlOrigins = '*'; // *(any) or space separated value
 
+$errorReporting = false;
+
+if (!$errorReporting){
+    ini_set('display_errors', 0);
+    ini_set('log_errors', 1);
+}
+
 $base = array(
 	'subsonic-response' => array(
 		'status' => $_['status'],

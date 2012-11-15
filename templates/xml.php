@@ -1,3 +1,11 @@
+<?php
+    $errorReporting = false;
+
+    if (!$errorReporting){
+        ini_set('display_errors', 0);
+        ini_set('log_errors', 1);
+    }
+?>
 <?php header ("Content-Type: text/xml"); ?>
 <?php echo '<?xml version="1.0" encoding="UTF-8"?>'; ?>
 <subsonic-response xmlns="http://subsonic.org/restapi" version="1.7.0" status="<?php echo $_['status']; ?>">
