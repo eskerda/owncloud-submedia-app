@@ -16,7 +16,7 @@ if (isset($_['error'])){
 		'message' => $_['error']['message']
 	);
 }
-if (isset($_['response'])){
+if (isset($_['response']) && is_array($_['response'])){
 	foreach ($_['response'] as $key=>$r){
 		$base['subsonic-response'][$key] = $r;
 	}
