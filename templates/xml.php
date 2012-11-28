@@ -5,6 +5,10 @@
         ini_set('display_errors', 0);
         ini_set('log_errors', 1);
     }
+
+    $_['response'] = OC_Submedia_Utils::fixBooleanKeys( $_['response'], 
+                                                    array("isDir","isVideo"),
+                                                    "true", "false" );
 ?>
 <?php header ("Content-Type: text/xml"); ?>
 <?php echo '<?xml version="1.0" encoding="UTF-8"?>'; ?>

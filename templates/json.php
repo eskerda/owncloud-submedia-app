@@ -10,6 +10,10 @@ if (!$errorReporting){
     ini_set('log_errors', 1);
 }
 
+$_['response'] = OC_Submedia_Utils::fixBooleanKeys( $_['response'], 
+								   					array("isDir","isVideo"),
+								   					true, false );
+
 $base = array(
 	'subsonic-response' => array(
 		'status' => $_['status'],

@@ -53,27 +53,7 @@ try {
 }
 
 $tmpl = new OCP\Template("submedia", OC_Media_Subsonic::getFormat($_REQUEST));
-if (OC_Media_Subsonic::getFormat($_REQUEST) == 'xml'){
-	// HACK: a bug in owncloud somethimes converts booleans
-	// to integers, making type casting *useless*. Hence, a
-	// hack:
 
-	function rec_wrapper($data, $boolean_keys){
-		$res = array();
-		foreach($data as $key=>$value){
-			if (is_array($value)){
-				$value = rec_wrapper($value, $boolean_keys);
-			} else {
-				if (in_array($key, $boolean_keys)){
-					$value = $value === true?"true":"false";
-				}
-			}
-			$res[$key] = $value;
-		}
-		return $res;
-	}
-	$response = rec_wrapper($response, array("isDir","isVideo"));
-}
 $tmpl->assign('response', $response);
 $tmpl->assign('action', $action);
 if (isset($_REQUEST['callback'])){
