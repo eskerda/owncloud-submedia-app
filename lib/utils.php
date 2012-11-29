@@ -25,31 +25,31 @@
  */
 class OC_Submedia_Utils {
 
-	public static function requestDupedParams($query){
-		$query  = explode('&', $query);
-		$params = array();
+    public static function requestDupedParams($query){
+        $query  = explode('&', $query);
+        $params = array();
 
-		foreach( $query as $param )
-		{
-		  list($name, $value) = explode('=', $param);
-		  $params[urldecode($name)][] = urldecode($value);
-		}
-		return $params;
-	}
+        foreach( $query as $param )
+        {
+          list($name, $value) = explode('=', $param);
+          $params[urldecode($name)][] = urldecode($value);
+        }
+        return $params;
+    }
 
-	public static function fixBooleanKeys($data, $booleankeys, $true, $false, $clean_function = NULL){
-		foreach($data as $key=>$value){
-			if (is_array($value)){
-				$value = self::fixBooleanKeys($value, $booleankeys, $true, $false, $clean_function);
-			} else {
-				if (in_array($key, $booleankeys)){
-					$value = $value == true?$true:$false;
-				}
-				if ($clean_function != NULL && is_string($value))
-				$value = $clean_function($value); 
-			}
-			$data[$key] = $value;
-		}
-		return $data;
-	}
+    public static function fixBooleanKeys($data, $booleankeys, $true, $false, $clean_function = NULL){
+        foreach($data as $key=>$value){
+            if (is_array($value)){
+                $value = self::fixBooleanKeys($value, $booleankeys, $true, $false, $clean_function);
+            } else {
+                if (in_array($key, $booleankeys)){
+                    $value = $value == true?$true:$false;
+                }
+                if ($clean_function != NULL && is_string($value))
+                $value = $clean_function($value); 
+            }
+            $data[$key] = $value;
+        }
+        return $data;
+    }
 }

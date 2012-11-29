@@ -7,6 +7,6 @@
     <author>Lluis Esquerda</author>
     <require>4</require>
     <remote>
-		<submedia>remote.php</submedia>
-	</remote>
+        <submedia>remote.php</submedia>
+    </remote>
 </info>
