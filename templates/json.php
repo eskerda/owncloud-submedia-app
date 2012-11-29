@@ -13,7 +13,9 @@ if (!$errorReporting){
 $_['response'] = OC_Submedia_Utils::fixBooleanKeys( $_['response'], 
                                                     array("isDir","isVideo"),
                                                     true, false,
-                                                    "html_entity_decode" );
+                                                    function($text){
+                                                        return html_entity_decode($text, ENT_QUOTES);
+                                                    });
 
 $base = array(
     'subsonic-response' => array(

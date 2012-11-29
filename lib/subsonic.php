@@ -521,10 +521,10 @@ class OC_MEDIA_SUBSONIC{
         $artist_name = OC_Media_Collection::getArtistName($songs[0]['song_artist']);
 
         $lastFm = new OC_Media_LastFM($lastfm_key);
-
+        
         $image_url = $lastFm::getCoverArt(
-                html_entity_decode($artist_name), 
-                html_entity_decode($album_name)
+                html_entity_decode($artist_name, ENT_QUOTES), 
+                html_entity_decode($album_name, ENT_QUOTES)
             );
         if (!$image_url){
             header("HTTP/1.0 404 Not Found");

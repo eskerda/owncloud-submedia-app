@@ -5,17 +5,18 @@
         ini_set('display_errors', 0);
         ini_set('log_errors', 1);
     }
-    
-    $fix_text = function($text){
-        return htmlspecialchars(html_entity_decode($text));
-    };
 
-    $_['response'] = OC_Submedia_Utils::fixBooleanKeys( $_['response'], 
-                                                    array("isDir","isVideo"),
-                                                    "true", "false",
-                                                    $fix_text);
-
+    $_['response'] = OC_Submedia_Utils::fixBooleanKeys( 
+                        $_['response'], 
+                        array("isDir","isVideo"),
+                        "true", "false",
+                        function($text){
+                            return htmlspecialchars(
+                                html_entity_decode($text, ENT_QUOTES)
+                            );
+                        });
 ?>
+
 <?php header ("Content-Type: text/xml"); ?>
 <?php echo '<?xml version="1.0" encoding="UTF-8"?>'; ?>
 <subsonic-response xmlns="http://subsonic.org/restapi" version="1.7.0" status="<?php echo $_['status']; ?>">
