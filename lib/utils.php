@@ -37,14 +37,16 @@ class OC_Submedia_Utils {
 		return $params;
 	}
 
-	public static function fixBooleanKeys($data, $booleankeys, $true, $false){
+	public static function fixBooleanKeys($data, $booleankeys, $true, $false, $clean_function = NULL){
 		foreach($data as $key=>$value){
 			if (is_array($value)){
-				$value = self::fixBooleanKeys($value, $booleankeys, $true, $false);
+				$value = self::fixBooleanKeys($value, $booleankeys, $true, $false, $clean_function);
 			} else {
 				if (in_array($key, $booleankeys)){
 					$value = $value == true?$true:$false;
 				}
+				if ($clean_function != NULL && is_string($value))
+				$value = $clean_function($value); 
 			}
 			$data[$key] = $value;
 		}

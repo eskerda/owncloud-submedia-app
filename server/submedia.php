@@ -54,8 +54,8 @@ try {
 
 $tmpl = new OCP\Template("submedia", OC_Media_Subsonic::getFormat($_REQUEST));
 
-$tmpl->assign('response', $response);
-$tmpl->assign('action', $action);
+$tmpl->assign('response', $response, false);
+$tmpl->assign('action', $action, false);
 if (isset($_REQUEST['callback'])){
 	$tmpl->assign('callback', $_REQUEST['callback']);
 }

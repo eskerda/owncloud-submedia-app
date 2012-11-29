@@ -562,14 +562,14 @@ class OC_MEDIA_SUBSONIC{
 
     private function modelAlbumToSubsonic($album, $artist){
         return array(
-                'artist' => html_entity_decode($artist),
+                'artist' => $artist,
                 //'averageRating' =>
                 //'userRating' =>
                 'coverArt' => 'album_'.$album['album_id'],
                 'id' => 'album_'.$album['album_id'],
                 'isDir' => true,
                 'parent' => $album['album_artist'],
-                'title' => html_entity_decode($album['album_name']),
+                'title' => $album['album_name'],
                 //'created' =>
         );
     }
@@ -583,9 +583,9 @@ class OC_MEDIA_SUBSONIC{
         return array(
             'id' => $song['song_id'],
             'parent' => 'album_'.$song['song_album'],
-            'title' => html_entity_decode($song['song_name']),
-            'album' => html_entity_decode($album),
-            'artist' => html_entity_decode($artist),
+            'title' => $song['song_name'],
+            'album' => $album,
+            'artist' => $artist,
             'isDir' => false,
             'coverArt' => 'album_'.$song['song_album'],
             //'created' =>
