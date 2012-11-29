@@ -24,7 +24,7 @@
 class OC_Media_LastFM{
 	public static $api_key = "";
 	public static $root = "http://ws.audioscrobbler.com/2.0/";
-	public static $album_info_url = "/?method=album.getinfo&api_key=%s&artist=%s&album=%s";
+	public static $album_info_url = "?method=album.getinfo&api_key=%s&artist=%s&album=%s";
 
 	public function __construct($public_api_key){
 		self::$api_key = $public_api_key;
@@ -32,8 +32,14 @@ class OC_Media_LastFM{
 	}
 
 	public static function getAlbumInfo($artistName, $albumName){
-		$url = sprintf(self::$root.self::$album_info_url,self::$api_key,urlencode(html_entity_decode($artistName)),urlencode(html_entity_decode($albumName)));
+		$url = sprintf(self::$root.self::$album_info_url,
+			self::$api_key,
+			urlencode($artistName),
+			urlencode($albumName)
+		);
+
 		$info = file_get_contents($url);
+		
 		if ($info == ""){
 			throw new Exception("not found");
 		}

@@ -523,7 +523,10 @@ class OC_MEDIA_SUBSONIC{
         $lastFm = new OC_Media_LastFM($lastfm_key);
 
         try{
-            $album_info = $lastFm::getAlbumInfo($artist_name, $album_name);
+            $album_info = $lastFm::getAlbumInfo(
+                html_entity_decode($artist_name), 
+                html_entity_decode($album_name)
+            );
             $xml = simplexml_load_string($album_info);
             $image_url = (string)$xml->album->image[3];
             if ($image_url == ""){
