@@ -522,18 +522,11 @@ class OC_MEDIA_SUBSONIC{
 
         $lastFm = new OC_Media_LastFM($lastfm_key);
 
-        try{
-            $album_info = $lastFm::getAlbumInfo(
+        $image_url = $lastFm::getCoverArt(
                 html_entity_decode($artist_name), 
                 html_entity_decode($album_name)
             );
-            $xml = simplexml_load_string($album_info);
-            $image_url = (string)$xml->album->image[3];
-            if ($image_url == ""){
-                $image_url = self::$data_path.'defaultcover.png';
-            }
-
-        } catch (Exception $e){
+        if (!$image_url){
             header("HTTP/1.0 404 Not Found");
             $image_url = self::$data_path.'defaultcover.png';
         }
