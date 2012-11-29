@@ -185,7 +185,7 @@ class OC_Media_Playlist {
                 ':song_user' => $uid
             ))->fetchAll();
 
-            if ($songs_exist_and_owned[0]['count'] != count($song_ids)) {
+            if ($songs_exist_and_owned[0]['count'] != count(array_unique($song_ids))) {
                 throw new Media_Playlist_Not_Found_Exception(':8');
             }
 
