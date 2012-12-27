@@ -42,6 +42,9 @@ try {
         case 'getCoverArt':
             $subsonic->outputCoverArt($_REQUEST);
             break;
+        case 'getAlbumList':
+            $response = $subsonic->getAlbumList($_REQUEST);
+            break;
         default:
             // Look at my horse, my horse is amazing!
     }

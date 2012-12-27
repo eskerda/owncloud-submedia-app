@@ -554,7 +554,62 @@ class OC_MEDIA_SUBSONIC{
         }
         exit();
     }
+
+    /**
+     * @brief Returns a list of random or newest albums.
+     * @param string type mandatory: the list type (random, newest).
+     * @param int size optional default 10. The number of albums to return. Max 500.
+     * @param int offset optional default 0. The list offset.
+     * @return associative array
+     */
+    public function getAlbumList($params){
+
+        function compareAlbumId($foo, $bar) {
+            return $foo['album_id'] > $bar['album_id'];
+        }
+
+        $type = (isset($params['type']))?$params['type']:false;
+        $size = (isset($params['size']) && $params['size'] <= 500)?$params['size']: 10;
+        $offset = (isset($params['offset']))?$params['offset']:0;
+
+        if (!$type){
+            throw new Exception("Required string parameter 'type' is not present", 10);
+        }
         
+        $albums = OC_Media_Collection::getAlbums(0);
+        
+        switch($type){
+            case 'newest':
+                // Sort them by album_id (pseudo-date..)
+                usort($albums, "compareAlbumId");
+                $albums = array_slice(array_reverse($albums), $offset, $size);
+                break;
+            case 'random':
+                shuffle($albums);
+                $albums = array_slice($albums, $offset, $size);
+                break;
+            default:
+                throw new Exception('Not implemented', 70);
+        }
+
+        $response = array();
+        for ($i = 0; $i < sizeof($albums) && $i < $size; $i++){
+            $response[] = OC_MEDIA_SUBSONIC::modelAlbumToSubsonic(
+                $albums[$i],
+                OC_Media_Collection::getArtistName($albums[$i]['album_artist'])
+            );
+        }
+        
+        if ($this->format == 'json' || $this->format == 'jsonp'){
+            $response = array(
+                'albumList' => array(
+                    'album' => $response
+                )
+            );
+        }
+        
+        return $response;
+    }
 
     private function modelAlbumToSubsonic($album, $artist){
         return array(
