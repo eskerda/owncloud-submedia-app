@@ -131,6 +131,7 @@ class OC_MEDIA_SUBSONIC{
             In the future we could, for instance, separate shared
             music into different folders.
         */
+        /*
         return array(
             'musicFolders' => array(
                     'musicFolder' => array(
@@ -139,6 +140,57 @@ class OC_MEDIA_SUBSONIC{
                     )
             )
         );
+        */
+
+        // Should be better array index and id value
+        $musicFolders = array(
+            'musicFolder' => array(
+                'id' => 'all',
+                'name' => 'All'
+            ),
+            array(
+                'id' => $this->user,
+                'name' => $this->user
+            )
+        );
+        // Find a shared music file owners
+        $statement = OCP\DB::prepare(
+            'SELECT song_path'
+            . ' FROM *PREFIX*media_songs'
+            . ' WHERE song_path LIKE :song_path'
+            . ' AND song_user = :song_user'
+        );
+        $results = $statement->execute(array(
+            ':song_path' => '/Shared/%',
+            ':song_user' => $this->user
+        ))->fetchAll();
+        if (count($results) > 0) {
+            $songPaths = array();
+            foreach ($results as $result) {
+                // addslashes() not better.
+                // Should use the quote() method of DB connection object to SQL escape, if possible.
+                $songPaths[] = addslashes(substr($result['song_path'], strlen('/Shared')));
+            }
+            $statement = OCP\DB::prepare(
+                'SELECT DISTINCT uid_owner'
+                . ' FROM *PREFIX*share'
+                . ' WHERE share_with = :share_with'
+                . " AND file_target IN ('" . implode("','", $songPaths) . "')" // will no match to folder share
+            );
+            $results = $statement->execute(array(
+                ':share_with' => $this->user
+            ))->fetchAll();
+            if (count($results) > 0) {
+                foreach ($results as $result) {
+                    $musicFolders[] = array(
+                        'id' => $result['uid_owner'],
+                        'name' => $result['uid_owner']
+                    );
+                }
+            }
+        }
+
+        return array('musicFolders' => $musicFolders);
     }
 
     /**
@@ -147,7 +199,7 @@ class OC_MEDIA_SUBSONIC{
      * @param int optional $ifModifiedSince If specified, only return a result if the artist collection has changed since the given time (in milliseconds since 1 Jan 1970).
      * @return associative array
      */
-    public function getIndexes(){
+    public function getIndexes($musicFolderId = null, $ifModifiedSince = null){
         /** We want something similar to this mess...
         <indexes lastModified="1347639481261">
             <shortcut name="Podcast" id="920"/>
@@ -162,7 +214,67 @@ class OC_MEDIA_SUBSONIC{
             </index>
             ...
         **/
-        $artists = OC_Media_Collection::getArtists();
+        $artists = array();
+        if (empty($musicFolderId) || $musicFolderId == 'all') {
+            $artists = OC_Media_Collection::getArtists();
+        }
+        else if ($musicFolderId == $this->user) {
+            // Get the list of artists without a shared music
+            $statement = OCP\DB::prepare(
+                'SELECT DISTINCT artist_name, artist_id'
+                . ' FROM *PREFIX*media_artists'
+                . ' INNER JOIN *PREFIX*media_songs'
+                . ' ON artist_id = song_artist'
+                . ' WHERE artist_name LIKE :artist_name'
+                . ' AND song_path NOT LIKE :song_path'
+                . ' AND song_user = :song_user'
+                . ' ORDER BY artist_name'
+            );
+            $results = $statement->execute(array(
+                'artist_name' => '%',
+                ':song_path' => '/Shared/%',
+                ':song_user' => $this->user
+            ))->fetchAll();
+            if (count($results) > 0) {
+                $artists = $results;
+            }
+        }
+        else if (!empty($musicFolderId)) {
+            // Get the list of artists of a shared music
+            $statement = OCP\DB::prepare(
+                'SELECT file_target'
+                . ' FROM *PREFIX*share'
+                . ' WHERE share_with = :share_with'
+                . ' AND uid_owner = :uid_owner'
+            );
+            $results = $statement->execute(array(
+                ':share_with' => $this->user,
+                ':uid_owner' => $musicFolderId
+            ))->fetchAll();
+            if (count($results) > 0) {
+                $songPaths = array();
+                foreach ($results as $result) {
+                    $songPaths[] = '/Shared' . $result['file_target'];
+                }
+                $statement = OCP\DB::prepare(
+                    'SELECT DISTINCT artist_name, artist_id'
+                    . ' FROM *PREFIX*media_artists'
+                    . ' INNER JOIN *PREFIX*media_songs'
+                    . ' ON artist_id = song_artist'
+                    . ' WHERE artist_name LIKE :artist_name'
+                    . " AND song_path IN ('" . implode("','", $songPaths) . "')" // will no match to folder share
+                    . ' AND song_user = :song_user'
+                    . ' ORDER BY artist_name'
+                );
+                $results = $statement->execute(array(
+                    'artist_name' => '%',
+                    ':song_user' => $this->user
+                ))->fetchAll();
+                if (count($results) > 0) {
+                    $artists = $results;
+                }
+            }
+        }
 
         // TODO: Find a way to get the last modified time
         $response = array(
