@@ -54,7 +54,7 @@ class OC_MEDIA_COLLECTION_EXTRA extends OC_Media_Collection {
     * @param integer id
     * @return array the list of fields on an album
     */
-    static public function getAlbum($id) {
+    public static function getAlbum($id) {
         $query=OCP\DB::prepare(
             'SELECT `album_name`, `album_artist`, `album_id`
             FROM `*PREFIX*media_albums`
