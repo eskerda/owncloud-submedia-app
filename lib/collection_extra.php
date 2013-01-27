@@ -48,4 +48,22 @@ class OC_MEDIA_COLLECTION_EXTRA extends OC_Media_Collection {
 
         return $result[0]['count'];
     }
+
+    /**
+    * Get an album that an id
+    * @param integer id
+    * @return array the list of fields on an album
+    */
+    static public function getAlbum($id) {
+        $query=OCP\DB::prepare(
+            'SELECT `album_name`, `album_artist`, `album_id`
+            FROM `*PREFIX*media_albums`
+            WHERE `album_id` = :id'
+        );
+        $result=$query->execute(array(':id' => $id))->fetchAll();
+        if (count($result) > 0)
+            return $result[0];
+        else
+            return false;
+    }
 }

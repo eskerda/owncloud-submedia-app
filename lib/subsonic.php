@@ -651,6 +651,35 @@ class OC_MEDIA_SUBSONIC{
         return $r;
     }
 
+    public function getAlbum($params) {
+        $id = (isset($params['id']))?$params['id']:false;
+
+        if (!$id){
+            throw new Exception("Required int parameter 'id' is not present", 10);
+        }
+
+        if (sizeof(explode('_', $id)) > 1)
+            $id = explode('_', $id)[1];
+
+        $album = OC_Media_Collection_Extra::getAlbum($id);
+
+        if (!$album){
+            throw new Exception("Album not found.", 70);
+        }
+
+        $songs = OC_Media_Collection::getSongs(0,$id);
+        $artist = OC_Media_Collection::getArtistName($id);
+        $r = array(
+            'album' => self::modelAlbumToSubsonic($album, $artist, 180)
+        );
+        
+        $r['album']['song'] = array();
+        foreach ($songs as $song){
+            $r['album']['song'][] = self::modelSongToSubsonic($song, $artist, $album['album_id']);
+        }
+        return $r;
+    }
+
     private function modelAlbumToSubsonic($album, $artist, $version = 170){
         if ($version <= 170){
             return array(
