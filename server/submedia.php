@@ -45,6 +45,9 @@ try {
         case 'getAlbumList':
             $response = $subsonic->getAlbumList($_REQUEST);
             break;
+        case 'getArtist':
+            $response = $subsonic->getArtist($_REQUEST);
+            break;
         default:
             // Look at my horse, my horse is amazing!
     }

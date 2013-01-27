@@ -615,8 +615,45 @@ class OC_MEDIA_SUBSONIC{
         return $response;
     }
 
-    private function modelAlbumToSubsonic($album, $artist){
-        return array(
+    public function getArtist($params) {
+        $id = (isset($params['id']))?$params['id']:false;
+
+        if (!$id){
+            throw new Exception("Required int parameter 'id' is not present", 10);
+        }
+
+        if (sizeof(explode('_', $id)) > 1)
+            $id = explode('_', $id)[1];
+
+        if (!OC_Media_Collection_Extra::isArtist($id)){
+            throw new Exception("Artist not found.", 70);
+        }
+
+        $albums = OC_Media_Collection::getAlbums($id);
+        $name = OC_Media_Collection::getArtistName($id);
+        $r = array(
+            'artist' => array(
+                'id' => 'artist_'.$id,
+                'name' => $name,
+                'coverArt' => 'artist_'.$id,
+                'albumCount' => sizeof($albums),
+                'album' => array()
+            )
+        );
+        foreach ($albums as $album){
+            $r['artist']['album'][] = self::modelAlbumToSubsonic($album, $name, 180);
+        }
+
+        if (sizeof($r['artist']['album']) == 1){
+            $r['artist']['album'] = $r['artist']['album'][0];
+        }
+        
+        return $r;
+    }
+
+    private function modelAlbumToSubsonic($album, $artist, $version = 170){
+        if ($version <= 170){
+            return array(
                 'artist' => $artist,
                 //'averageRating' =>
                 //'userRating' =>
@@ -626,7 +663,18 @@ class OC_MEDIA_SUBSONIC{
                 'parent' => $album['album_artist'],
                 'title' => $album['album_name'],
                 //'created' =>
-        );
+            );
+        } else {
+            return array(
+                'id' => 'album_'.$album['album_id'],
+                'name' => $album['album_name'],
+                'artist' => $artist,
+                'artistId' => 'artist_'.$album['album_artist'],
+                'coverArt' => 'album_'.$album['album_id'],
+                'songCount' => OC_Media_Collection_Extra::getAlbumSongCount($album['album_id']),
+                'duration' => OC_Media_Collection_Extra::getAlbumLength($album['album_id'])
+            );
+        }
     }
 
     private function modelSongToSubsonic($song, $artist, $album){
