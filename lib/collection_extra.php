@@ -35,7 +35,7 @@ class OC_MEDIA_COLLECTION_EXTRA extends OC_Media_Collection {
     }
 
     /**
-    * Get the duration in seconds on the songs of an album
+    * Get the number of songs in an album
     * @param int id
     * @return int
     */
