@@ -20,7 +20,7 @@ $_['response'] = OC_Submedia_Utils::fixBooleanKeys( $_['response'],
 $base = array(
     'subsonic-response' => array(
         'status' => $_['status'],
-        'version' => '1.7.0',
+        'version' => OC_Media_Subsonic::$api_version,
         'xmlns' => 'http://subsonic.org/restapi'
     )
 );

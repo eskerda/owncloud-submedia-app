@@ -52,6 +52,8 @@ class OC_MEDIA_SUBSONIC{
     var $client = false;
     var $format = 'xml';
 
+    public static $api_version = "1.8.0";
+
     protected static $data_path = 'apps/submedia/lib/data/';
 
     public static $formatWhiteList = array(

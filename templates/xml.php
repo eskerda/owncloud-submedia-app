@@ -18,7 +18,7 @@
                             );
                         });
 ?>
-<subsonic-response xmlns="http://subsonic.org/restapi" version="1.7.0" status="<?php echo $_['status']; ?>">
+<subsonic-response xmlns="http://subsonic.org/restapi" version="<?php echo OC_Media_Subsonic::$api_version; ?>" status="<?php echo $_['status']; ?>">
 <?php if (isset($_['error'])): ?>
     <error code="<?php echo $_['error']['code']; ?>" message="<?php echo $_['error']['message']; ?>"/>
 <?php endif; ?>
