@@ -149,7 +149,7 @@ class OC_MEDIA_SUBSONIC{
      * @param int optional $ifModifiedSince If specified, only return a result if the artist collection has changed since the given time (in milliseconds since 1 Jan 1970).
      * @return associative array
      */
-    public function getIndexes(){
+    public function getIndexes($params, $version = 170){
         /** We want something similar to this mess...
         <indexes lastModified="1347639481261">
             <shortcut name="Podcast" id="920"/>
@@ -164,11 +164,17 @@ class OC_MEDIA_SUBSONIC{
             </index>
             ...
         **/
+
+        if ($version > 170)
+            $top_root = 'artists';
+        else
+            $top_root = 'indexes';
+
         $artists = OC_Media_Collection::getArtists();
 
         // TODO: Find a way to get the last modified time
         $response = array(
-            'indexes' => array(
+            $top_root => array(
                 'lastModified' => strval(round(microtime(true)*100)),
                 'index' => array()
             )
@@ -183,18 +189,17 @@ class OC_MEDIA_SUBSONIC{
                 // should be grouped under #
                 $letter = '#';
             }
-            if (!isset($response['indexes']['index'][$letter]))
-                $response['indexes']['index'][$letter] = array();
+            if (!isset($response[$top_root]['index'][$letter]))
+                $response[$top_root]['index'][$letter] = array();
 
-            $response['indexes']['index'][$letter][] = array(
-                'id' => 'artist_'.$artist['artist_id'],
-                'name' => $artist['artist_name']);
+            $response[$top_root]['index'][$letter][] = 
+                self::modelArtistToSubsonic($artist, $version);
         }
         if ($this->format == 'json' || $this->format == 'jsonp'){
-            $letters = $response['indexes']['index'];
-            $response['indexes']['index'] = array();
+            $letters = $response[$top_root]['index'];
+            $response[$top_root]['index'] = array();
             foreach ($letters as $letter=>$artists){
-                $response['indexes']['index'][] = array(
+                $response[$top_root]['index'][] = array(
                     'name' => $letter,
                     'artist' => $artists
                 );
@@ -737,6 +742,19 @@ class OC_MEDIA_SUBSONIC{
             'artistId' => $song['song_artist'],
             'type' => 'music'
         );
+    }
+
+    private function modelArtistToSubsonic($artist, $version = 170){
+        $r = array(
+            'id' => 'artist_'.$artist['artist_id'],
+            'name' => $artist['artist_name']
+        );
+
+        if ($version > 170) {
+            $r['coverArt'] = 'artist_'.$artist['artist_id'];
+            $r['albumCount'] = OC_Media_Collection_Extra::getAlbumCount($artist['artist_id']);
+        }
+        return $r;
     }
 
     private function requestDupedParams($query){

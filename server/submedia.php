@@ -51,6 +51,8 @@ try {
         case 'getAlbum':
             $response = $subsonic->getAlbum($_REQUEST);
             break;
+        case 'getArtists':
+            $response = $subsonic->getIndexes($_REQUEST, 180);
         default:
             // Look at my horse, my horse is amazing!
     }

@@ -66,4 +66,19 @@ class OC_MEDIA_COLLECTION_EXTRA extends OC_Media_Collection {
         else
             return false;
     }
+
+    /**
+    * Get the number of albums from an artist
+    * @param integer id
+    * @return int
+    */
+    public static function getAlbumCount($id) {
+        $query=OCP\DB::prepare(
+            'SELECT COUNT(`album_id`) as count FROM `*PREFIX*media_albums` '
+            . 'WHERE `album_artist` = :id'
+        );
+        $result=$query->execute(array(':id' => $id))->fetchAll();
+
+        return $result[0]['count'];
+    }
 }
