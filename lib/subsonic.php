@@ -375,6 +375,10 @@ class OC_MEDIA_SUBSONIC{
             $r['song'][] = OC_MEDIA_SUBSONIC::modelSongToSubsonic($song, $art_ch[$song['song_artist']], $alb_ch[$song['song_album']]);
         }
 
+        $r['artist'] = array_slice($r['artist'], 0, $artistCount);
+        $r['song'] = array_slice($r['song'], 0, $songCount);
+        $r['album'] = array_slice($r['album'], 0, $albumCount);
+
         if (sizeof($r) > 0)
             return array('searchResult2'=>$r);
         else
