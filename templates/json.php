@@ -52,5 +52,11 @@ if ($isAllowAccessControl && !empty($allowedAccessControlOrigins)) {
     **/
 ?>
 <?php if (isset($_['callback'])): ?><?php echo $_['callback']; ?>(<?php endif; ?>
-<?php echo str_replace('\\/', '/', json_encode($base, JSON_PRETTY_PRINT)); ?>
+<?php 
+    if (phpversion() >= '5.4.0')
+        $options = JSON_PRETTY_PRINT;
+    else
+        $options = 0;
+?>
+<?php echo str_replace('\\/', '/', json_encode($base, $options)); ?>
 <?php if (isset($_['callback'])): ?>);<?php endif; ?>
