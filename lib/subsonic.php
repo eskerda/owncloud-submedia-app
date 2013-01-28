@@ -319,7 +319,7 @@ class OC_MEDIA_SUBSONIC{
             $q = '';
         else
             $q = $query['query'];
-                    
+
         $q = trim(htmlentities($q));
 
         if (!isset($query['artistCount']))
@@ -624,8 +624,11 @@ class OC_MEDIA_SUBSONIC{
             throw new Exception("Required int parameter 'id' is not present", 10);
         }
 
-        if (sizeof(explode('_', $id)) > 1)
-            $id = explode('_', $id)[1];
+        if (strpos($id, '_') !== false){
+            $f_id = explode('_', $id);
+            $id = $f_id[1];
+        }
+            
 
         if (!OC_Media_Collection_Extra::isArtist($id)){
             throw new Exception("Artist not found.", 70);
@@ -642,12 +645,14 @@ class OC_MEDIA_SUBSONIC{
                 'album' => array()
             )
         );
+
         foreach ($albums as $album){
             $r['artist']['album'][] = self::modelAlbumToSubsonic($album, $name, 180);
         }
 
-        if (sizeof($r['artist']['album']) == 1){
-            $r['artist']['album'] = $r['artist']['album'][0];
+        if (count($r['artist']['album']) == 1) {
+            if ($this->format == 'json' || $this->format == 'jsonp')
+                $r['artist']['album'] = $r['artist']['album'][0];
         }
         
         return $r;
@@ -660,8 +665,10 @@ class OC_MEDIA_SUBSONIC{
             throw new Exception("Required int parameter 'id' is not present", 10);
         }
 
-        if (sizeof(explode('_', $id)) > 1)
-            $id = explode('_', $id)[1];
+        if (strpos($id, '_') !== false){
+            $f_id = explode('_', $id);
+            $id = $f_id[1];
+        }
 
         $album = OC_Media_Collection_Extra::getAlbum($id);
 
