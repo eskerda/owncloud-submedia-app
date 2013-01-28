@@ -1,6 +1,6 @@
 <?php
 
-class OC_MEDIA_COLLECTION_EXTRA extends OC_Media_Collection {
+class OC_MEDIA_COLLECTION_EXTRA{
 
     /**
     * check if an artist does exist
