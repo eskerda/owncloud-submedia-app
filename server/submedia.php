@@ -54,7 +54,7 @@ try {
         case 'getArtists':
             $response = $subsonic->getIndexes($_REQUEST, 180);
         default:
-            // Look at my horse, my horse is amazing!
+            throw new Exception('Not Implemented', 30);
     }
 } catch (Exception $e){
     $error = array(
