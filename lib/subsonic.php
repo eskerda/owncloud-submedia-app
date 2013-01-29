@@ -373,7 +373,12 @@ class OC_MEDIA_SUBSONIC{
         $r['album'] = array_slice($r['album'], $albumOffset, $albumCount);
         $r['song'] = array_slice($r['song'], $songOffset, $songCount);
 
-        if (sizeof($r) > 0)
+        foreach ($r as $key=>$value) {
+            if (count($value) == 0)
+                unset($r[$key]);
+        }
+
+        if (count($r) > 0)
             return array('searchResult2'=>$r);
         else
             return array('searchResult2'=>'');
