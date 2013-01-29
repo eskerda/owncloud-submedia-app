@@ -22,8 +22,14 @@ try {
         case 'stream':
             $subsonic->stream($_REQUEST);
             break;
+        case 'search':
+            $response = $subsonic->search($_REQUEST, 1);
+            break;
         case 'search2':
             $response = $subsonic->search($_REQUEST);
+            break;
+        case 'search3':
+            $response = $subsonic->search($_REQUEST, 3);
             break;
         case 'getLicense':
             break;
