@@ -322,20 +322,12 @@ class OC_MEDIA_SUBSONIC{
 
         $q = trim(htmlentities($q));
 
-        if (!isset($query['artistCount']))
-            $artistCount = 10;
-        else
-            $artistCount = $query['artistCount'];
-
-        if (!isset($query['albumCount']))
-            $albumCount = 20;
-        else
-            $albumCount = $query['albumCount'];
-
-        if (!isset($query['songCount']))
-            $songCount = 25;
-        else
-            $songCount = $query['songCount'];
+        $artistCount = (isset($query['artistCount']))?intval($query['artistCount']):20;
+        $artistOffset = (isset($query['artistOffset']))?intval($query['artistOffset']):0;
+        $albumCount = (isset($query['albumCount']))?intval($query['albumCount']):20;
+        $albumOffset = (isset($query['albumOffset']))?intval($query['albumOffset']):0;
+        $songCount = (isset($query['songCount']))?intval($query['songCount']):20;
+        $songOffset = (isset($query['songOffset']))?intval($query['songOffset']):0;
 
         $artists = OC_Media_Collection::getArtists($q);
         $albums = OC_Media_Collection::getAlbums(0, $q);
@@ -377,9 +369,9 @@ class OC_MEDIA_SUBSONIC{
             $r['song'][] = OC_MEDIA_SUBSONIC::modelSongToSubsonic($song, $art_ch[$song['song_artist']], $alb_ch[$song['song_album']]);
         }
 
-        $r['artist'] = array_slice($r['artist'], 0, $artistCount);
-        $r['song'] = array_slice($r['song'], 0, $songCount);
-        $r['album'] = array_slice($r['album'], 0, $albumCount);
+        $r['artist'] = array_slice($r['artist'], $artistOffset, $artistCount);
+        $r['album'] = array_slice($r['album'], $albumOffset, $albumCount);
+        $r['song'] = array_slice($r['song'], $songOffset, $songCount);
 
         if (sizeof($r) > 0)
             return array('searchResult2'=>$r);
