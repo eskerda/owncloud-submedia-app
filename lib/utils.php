@@ -46,7 +46,7 @@ class OC_Submedia_Utils {
                     $value = $value == true?$true:$false;
                 }
                 if ($clean_function != NULL && is_string($value))
-                $value = $clean_function($value); 
+                $value = $clean_function($value);
             }
             $data[$key] = $value;
         }

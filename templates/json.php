@@ -10,7 +10,7 @@ if (!$errorReporting){
     ini_set('log_errors', 1);
 }
 
-$_['response'] = OC_Submedia_Utils::fixBooleanKeys( $_['response'], 
+$_['response'] = OC_Submedia_Utils::fixBooleanKeys( $_['response'],
                                                     array("isDir","isVideo"),
                                                     true, false,
                                                     function($text){
@@ -52,7 +52,7 @@ if ($isAllowAccessControl && !empty($allowedAccessControlOrigins)) {
     **/
 ?>
 <?php if (isset($_['callback'])): ?><?php echo $_['callback']; ?>(<?php endif; ?>
-<?php 
+<?php
     if (phpversion() >= '5.4.0')
         $options = JSON_PRETTY_PRINT;
     else

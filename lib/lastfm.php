@@ -39,7 +39,7 @@ class OC_Media_LastFM{
         );
 
         $info = file_get_contents($url);
-        
+
         if ($info == ""){
             throw new Exception("not found");
         }
@@ -81,7 +81,7 @@ class Simple_File_Cache{
     public function __construct($tmp_path = false){
         if (!$tmp_path)
             $tmp_path = sys_get_temp_dir();
-        
+
         self::$cache = $tmp_path.self::$cache;
         self::$blacklist = $tmp_path.self::$blacklist;
 
