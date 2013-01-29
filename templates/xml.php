@@ -21,12 +21,13 @@
 <subsonic-response xmlns="http://subsonic.org/restapi" version="<?php echo OC_Media_Subsonic::$api_version; ?>" status="<?php echo $_['status']; ?>">
 <?php if (isset($_['error'])): ?>
     <error code="<?php echo $_['error']['code']; ?>" message="<?php echo $_['error']['message']; ?>"/>
-<?php endif; ?>
+<?php else: ?>
 <?php if (file_exists(OC::$SERVERROOT.'/apps/submedia/templates/xml.'.$_['action'].'.php')): ?>
     <?php
         $tmpl = new OCP\Template('submedia', 'xml.'.$_['action']);
         $tmpl->assign('response', $_['response'], false);
         $tmpl->printpage();
     ?>
+<?php endif; ?>
 <?php endif; ?>
 </subsonic-response>

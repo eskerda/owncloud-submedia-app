@@ -307,7 +307,16 @@ class OC_MEDIA_SUBSONIC{
         }
     }
 
-    function search ($query){
+    function search ($query, $version = 2){
+        switch ($version) {
+            case 2:
+                return self::search_2($query);
+            default:
+                throw new Exception('Not implemented', 30);
+        }
+    }
+
+    private function search_2 ($query){
         /** Sorry for this messy function, Subsonic API search results are
          *  THAT lousy. First, it looks for artists, albums and songs that
          *  match a query.
