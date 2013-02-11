@@ -199,7 +199,7 @@ class OC_MEDIA_SUBSONIC{
      * @param int optional $ifModifiedSince If specified, only return a result if the artist collection has changed since the given time (in milliseconds since 1 Jan 1970).
      * @return associative array
      */
-    public function getIndexes($musicFolderId = null, $ifModifiedSince = null){
+    public function getIndexes($params){
         /** We want something similar to this mess...
         <indexes lastModified="1347639481261">
             <shortcut name="Podcast" id="920"/>
@@ -214,6 +214,10 @@ class OC_MEDIA_SUBSONIC{
             </index>
             ...
         **/
+
+        $musicFolderId = isset($params['musicFolderId'])?$params['musicFolderId']:'all';
+        $ifModifiedSince = isset($params['ifModifiedSince'])?$params['ifModifiedSince']:false;
+
         $artists = array();
         if (empty($musicFolderId) || $musicFolderId == 'all') {
             $artists = OC_Media_Collection::getArtists();
@@ -251,10 +255,11 @@ class OC_MEDIA_SUBSONIC{
                 ':share_with' => $this->user,
                 ':uid_owner' => $musicFolderId
             ))->fetchAll();
+
             if (count($results) > 0) {
                 $songPaths = array();
                 foreach ($results as $result) {
-                    $songPaths[] = '/Shared' . $result['file_target'];
+                    $songPaths[] = 'song_path LIKE \'/Shared' . $result['file_target'].'%\'';
                 }
                 $statement = OCP\DB::prepare(
                     'SELECT DISTINCT artist_name, artist_id'
@@ -262,7 +267,7 @@ class OC_MEDIA_SUBSONIC{
                     . ' INNER JOIN *PREFIX*media_songs'
                     . ' ON artist_id = song_artist'
                     . ' WHERE artist_name LIKE :artist_name'
-                    . " AND song_path IN ('" . implode("','", $songPaths) . "')" // will no match to folder share
+                    . " AND ".implode(" OR ", $songPaths)
                     . ' AND song_user = :song_user'
                     . ' ORDER BY artist_name'
                 );
