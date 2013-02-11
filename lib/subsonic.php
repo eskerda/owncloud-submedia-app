@@ -340,7 +340,7 @@ class OC_MEDIA_SUBSONIC{
         if (!isset($query['query']))
             $q = '';
         else
-            $q = $query['query'];
+            $q = preg_replace('/[\"\'\*"]/', '', $query['query']);
 
         $q = trim(htmlentities($q));
 
