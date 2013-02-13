@@ -711,26 +711,27 @@ class OC_MEDIA_SUBSONIC{
     private function modelAlbumToSubsonic($album, $artist, $version = 170){
         if ($version <= 170){
             return array(
-                'artist' => $artist,
-                //'averageRating' =>
-                //'userRating' =>
-                'coverArt' => 'album_'.$album['album_id'],
                 'id' => 'album_'.$album['album_id'],
-                'isDir' => true,
-                'parent' => $album['album_artist'],
                 'title' => $album['album_name'],
+                //'averageRating' =>
+                //'starred' =>
                 //'created' =>
-                'album' => $album['album_name']
+                'album' => $album['album_name'],
+                'parent' => 'artist_'.$album['album_artist'],
+                'isDir' => true,
+                'artist' => $artist,
+                'coverArt' => 'album_'.$album['album_id'],
             );
         } else {
             return array(
                 'id' => 'album_'.$album['album_id'],
+                'duration' => OC_Media_Collection_Extra::getAlbumLength($album['album_id']),
+                'songCount' => OC_Media_Collection_Extra::getAlbumSongCount($album['album_id']),
+                //'created' =>
+                'artistId' => 'artist_'.$album['album_artist'],
                 'name' => $album['album_name'],
                 'artist' => $artist,
-                'artistId' => 'artist_'.$album['album_artist'],
                 'coverArt' => 'album_'.$album['album_id'],
-                'songCount' => OC_Media_Collection_Extra::getAlbumSongCount($album['album_id']),
-                'duration' => OC_Media_Collection_Extra::getAlbumLength($album['album_id'])
             );
         }
     }
