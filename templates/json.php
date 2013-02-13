@@ -31,9 +31,10 @@ if (isset($_['error'])){
     );
 }
 if (isset($_['response']) && is_array($_['response'])){
-    foreach ($_['response'] as $key=>$r){
-        $base['subsonic-response'][$key] = $r;
-    }
+    $base['subsonic-response'] = array_merge(
+        $base['subsonic-response'],
+        $_['response']
+    );
 }
 if (!isset($_['callback'])){
     header ("Content-Type: application/json;charset=UTF-8");
