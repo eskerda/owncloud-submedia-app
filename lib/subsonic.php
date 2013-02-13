@@ -720,6 +720,7 @@ class OC_MEDIA_SUBSONIC{
                 'parent' => $album['album_artist'],
                 'title' => $album['album_name'],
                 //'created' =>
+                'album' => $album['album_name']
             );
         } else {
             return array(
