@@ -29,7 +29,7 @@ class OC_MEDIA_COLLECTION_EXTRA{
         $result=$query->execute(array(':id' => $id))->fetchAll();
 
         if ($result[0]['length'] !== NULL)
-            return $result[0]['length'];
+            return intval($result[0]['length']);
         else
             return 0;
     }
@@ -46,7 +46,7 @@ class OC_MEDIA_COLLECTION_EXTRA{
         );
         $result=$query->execute(array(':id' => $id))->fetchAll();
 
-        return $result[0]['count'];
+        return intval($result[0]['count']);
     }
 
     /**
@@ -79,6 +79,6 @@ class OC_MEDIA_COLLECTION_EXTRA{
         );
         $result=$query->execute(array(':id' => $id))->fetchAll();
 
-        return $result[0]['count'];
+        return intval($result[0]['count']);
     }
 }
