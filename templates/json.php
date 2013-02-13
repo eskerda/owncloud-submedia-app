@@ -10,17 +10,19 @@ if (!$errorReporting){
     ini_set('log_errors', 1);
 }
 
-$_['response'] = OC_Submedia_Utils::fixBooleanKeys( $_['response'], 
-                                                    array("isDir","isVideo"),
-                                                    true, false,
-                                                    function($text){
-                                                        return html_entity_decode($text, ENT_QUOTES);
-                                                    });
+$_['response'] = OC_Submedia_Utils::fixBooleanKeys(
+    $_['response'],
+    array("isDir","isVideo"),
+    true, false,
+    function($text){
+        return html_entity_decode($text, ENT_QUOTES);
+    }
+);
 
 $base = array(
     'subsonic-response' => array(
         'status' => $_['status'],
-        'version' => '1.7.0',
+        'version' => OC_Media_Subsonic::$api_version,
         'xmlns' => 'http://subsonic.org/restapi'
     )
 );
@@ -31,9 +33,10 @@ if (isset($_['error'])){
     );
 }
 if (isset($_['response']) && is_array($_['response'])){
-    foreach ($_['response'] as $key=>$r){
-        $base['subsonic-response'][$key] = $r;
-    }
+    $base['subsonic-response'] = array_merge(
+        $base['subsonic-response'],
+        $_['response']
+    );
 }
 if (!isset($_['callback'])){
     header ("Content-Type: application/json;charset=UTF-8");
@@ -52,5 +55,11 @@ if ($isAllowAccessControl && !empty($allowedAccessControlOrigins)) {
     **/
 ?>
 <?php if (isset($_['callback'])): ?><?php echo $_['callback']; ?>(<?php endif; ?>
-<?php echo str_replace('\\/', '/', json_encode($base)); ?>
+<?php
+    if (phpversion() >= '5.4.0')
+        $options = JSON_PRETTY_PRINT;
+    else
+        $options = 0;
+?>
+<?php echo str_replace('\\/', '/', json_encode($base, $options)); ?>
 <?php if (isset($_['callback'])): ?>);<?php endif; ?>

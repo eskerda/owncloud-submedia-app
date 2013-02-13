@@ -22,8 +22,14 @@ try {
         case 'stream':
             $subsonic->stream($_REQUEST);
             break;
+        case 'search':
+            $response = $subsonic->search($_REQUEST, 1);
+            break;
         case 'search2':
             $response = $subsonic->search($_REQUEST);
+            break;
+        case 'search3':
+            $response = $subsonic->search($_REQUEST, 3);
             break;
         case 'getLicense':
             break;
@@ -45,8 +51,16 @@ try {
         case 'getAlbumList':
             $response = $subsonic->getAlbumList($_REQUEST);
             break;
+        case 'getArtist':
+            $response = $subsonic->getArtist($_REQUEST);
+            break;
+        case 'getAlbum':
+            $response = $subsonic->getAlbum($_REQUEST);
+            break;
+        case 'getArtists':
+            $response = $subsonic->getIndexes($_REQUEST, 180);
         default:
-            // Look at my horse, my horse is amazing!
+            throw new Exception('Not Implemented', 30);
     }
 } catch (Exception $e){
     $error = array(
