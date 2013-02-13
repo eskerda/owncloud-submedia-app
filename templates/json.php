@@ -10,12 +10,14 @@ if (!$errorReporting){
     ini_set('log_errors', 1);
 }
 
-$_['response'] = OC_Submedia_Utils::fixBooleanKeys( $_['response'],
-                                                    array("isDir","isVideo"),
-                                                    true, false,
-                                                    function($text){
-                                                        return html_entity_decode($text, ENT_QUOTES);
-                                                    });
+$_['response'] = OC_Submedia_Utils::fixBooleanKeys(
+    $_['response'],
+    array("isDir","isVideo"),
+    true, false,
+    function($text){
+        return html_entity_decode($text, ENT_QUOTES);
+    }
+);
 
 $base = array(
     'subsonic-response' => array(
