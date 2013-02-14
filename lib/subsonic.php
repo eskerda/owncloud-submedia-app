@@ -147,14 +147,17 @@ class OC_MEDIA_SUBSONIC{
         // Should be better array index and id value
         $musicFolders = array(
             'musicFolder' => array(
-                'id' => 'all',
-                'name' => 'All'
-            ),
-            array(
-                'id' => $this->user,
-                'name' => $this->user
+                array(
+                    'id' => 'all',
+                    'name' => 'All'
+                ),
+                array(
+                    'id' => $this->user,
+                    'name' => $this->user
+                )
             )
         );
+
         // Find a shared music file owners
         $statement = OCP\DB::prepare(
             'SELECT song_path'
@@ -184,7 +187,7 @@ class OC_MEDIA_SUBSONIC{
             ))->fetchAll();
             if (count($results) > 0) {
                 foreach ($results as $result) {
-                    $musicFolders[] = array(
+                    $musicFolders['musicFolder'][] = array(
                         'id' => $result['uid_owner'],
                         'name' => $result['uid_owner']
                     );
