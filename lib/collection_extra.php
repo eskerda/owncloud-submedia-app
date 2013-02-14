@@ -50,7 +50,7 @@ class OC_MEDIA_COLLECTION_EXTRA{
     }
 
     /**
-    * Get an album that an id
+    * Get an album by an id
     * @param integer id
     * @return array the list of fields on an album
     */
