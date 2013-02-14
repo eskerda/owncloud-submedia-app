@@ -217,9 +217,11 @@ class OC_MEDIA_SUBSONIC{
             ...
         **/
 
-        $musicFolderId = isset($params['musicFolderId'])?$params['musicFolderId']:'all';
-        $ifModifiedSince = isset($params['ifModifiedSince'])?$params['ifModifiedSince']:false;
+        $ifModifiedSince = isset($params['ifModifiedSince'])
+            ? $params['ifModifiedSince'] : false;
 
+        $musicFolderId = isset($params['musicFolderId']) && $params['musicFolderId'] != 'all'
+            ? $params['musicFolderId'] : false;
         $artists = array();
         if (empty($musicFolderId) || $musicFolderId == 'all') {
             $artists = OC_Media_Collection::getArtists();
