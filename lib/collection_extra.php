@@ -81,4 +81,73 @@ class OC_MEDIA_COLLECTION_EXTRA{
 
         return intval($result[0]['count']);
     }
+
+    /**
+     * Get a list of my artists, filtering by its owner.
+     * @param integer owner_id optional
+     * @return array the list of artists available to me, owned or shared
+     */
+    public static function getArtists($owner_id = false) {
+        if (!$owner_id)
+            return OC_MEDIA_COLLECTION::getArtists();
+        else{
+            if ($owner_id == $_SESSION['user_id']){
+                $statement = OCP\DB::prepare(
+                    'SELECT DISTINCT artist_name, artist_id
+                    FROM *PREFIX*media_artists
+                    INNER JOIN *PREFIX*media_songs
+                    ON artist_id = song_artist
+                    WHERE artist_name LIKE :artist_name
+                    AND song_path NOT LIKE :song_path
+                    AND song_user = :song_user
+                    ORDER BY artist_name'
+                );
+                    $results = $statement->execute(array(
+                        'artist_name' => '%',
+                        ':song_path' => '/Shared/%',
+                        ':song_user' => $owner_id
+                    ))->fetchAll();
+                if (count($results) > 0) {
+                    return $results;
+                }
+            } else {
+                $statement = OCP\DB::prepare(
+                    'SELECT file_target
+                    FROM *PREFIX*share
+                    WHERE share_with = :share_with
+                    AND uid_owner = :uid_owner'
+                );
+                $results = $statement->execute(array(
+                    ':share_with' => $_SESSION['user_id'],
+                    ':uid_owner' => $owner_id
+                ))->fetchAll();
+
+                if (count($results) > 0) {
+                    $songPaths = array();
+                    foreach ($results as $result) {
+                        $songPaths[] = 'song_path LIKE \'/Shared'.$result['file_target'].'%\'';
+                    }
+                    $statement = OCP\DB::prepare(
+                        'SELECT DISTINCT artist_name, artist_id
+                        FROM *PREFIX*media_artists
+                        INNER JOIN *PREFIX*media_songs
+                        ON artist_id = song_artist
+                        WHERE artist_name LIKE :artist_name
+                        AND '.implode(" OR ", $songPaths).'
+                        AND song_user = :song_user
+                        ORDER BY artist_name'
+                    );
+                    $results = $statement->execute(array(
+                        'artist_name' => '%',
+                        ':song_user' => $_SESSION['user_id']
+                    ))->fetchAll();
+
+                    if (count($results) > 0) {
+                        return $results;
+                    }
+                }
+                return array();
+            }
+        }
+    }
 }

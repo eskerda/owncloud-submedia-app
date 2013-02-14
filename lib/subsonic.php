@@ -222,68 +222,8 @@ class OC_MEDIA_SUBSONIC{
 
         $musicFolderId = isset($params['musicFolderId']) && $params['musicFolderId'] != 'all'
             ? $params['musicFolderId'] : false;
-        $artists = array();
-        if (empty($musicFolderId) || $musicFolderId == 'all') {
-            $artists = OC_Media_Collection::getArtists();
-        }
-        else if ($musicFolderId == $this->user) {
-            // Get the list of artists without a shared music
-            $statement = OCP\DB::prepare(
-                'SELECT DISTINCT artist_name, artist_id'
-                . ' FROM *PREFIX*media_artists'
-                . ' INNER JOIN *PREFIX*media_songs'
-                . ' ON artist_id = song_artist'
-                . ' WHERE artist_name LIKE :artist_name'
-                . ' AND song_path NOT LIKE :song_path'
-                . ' AND song_user = :song_user'
-                . ' ORDER BY artist_name'
-            );
-            $results = $statement->execute(array(
-                'artist_name' => '%',
-                ':song_path' => '/Shared/%',
-                ':song_user' => $this->user
-            ))->fetchAll();
-            if (count($results) > 0) {
-                $artists = $results;
-            }
-        }
-        else if (!empty($musicFolderId)) {
-            // Get the list of artists of a shared music
-            $statement = OCP\DB::prepare(
-                'SELECT file_target'
-                . ' FROM *PREFIX*share'
-                . ' WHERE share_with = :share_with'
-                . ' AND uid_owner = :uid_owner'
-            );
-            $results = $statement->execute(array(
-                ':share_with' => $this->user,
-                ':uid_owner' => $musicFolderId
-            ))->fetchAll();
 
-            if (count($results) > 0) {
-                $songPaths = array();
-                foreach ($results as $result) {
-                    $songPaths[] = 'song_path LIKE \'/Shared' . $result['file_target'].'%\'';
-                }
-                $statement = OCP\DB::prepare(
-                    'SELECT DISTINCT artist_name, artist_id'
-                    . ' FROM *PREFIX*media_artists'
-                    . ' INNER JOIN *PREFIX*media_songs'
-                    . ' ON artist_id = song_artist'
-                    . ' WHERE artist_name LIKE :artist_name'
-                    . " AND ".implode(" OR ", $songPaths)
-                    . ' AND song_user = :song_user'
-                    . ' ORDER BY artist_name'
-                );
-                $results = $statement->execute(array(
-                    'artist_name' => '%',
-                    ':song_user' => $this->user
-                ))->fetchAll();
-                if (count($results) > 0) {
-                    $artists = $results;
-                }
-            }
-        }
+        $artists = OC_Media_Collection_Extra::getArtists($musicFolderId);
 
         if ($version > 170)
             $top_root = 'artists';
