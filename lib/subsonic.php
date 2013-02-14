@@ -223,6 +223,9 @@ class OC_MEDIA_SUBSONIC{
         $musicFolderId = isset($params['musicFolderId']) && $params['musicFolderId'] != 'all'
             ? $params['musicFolderId'] : false;
 
+        $musicFolderId = !$musicFolderId && isset($params['id']) && $params['id'] != 'all'
+            ? $params['id'] : $musicFolderId;
+
         $artists = OC_Media_Collection_Extra::getArtists($musicFolderId);
 
         if ($version > 170)
