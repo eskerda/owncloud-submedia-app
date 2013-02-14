@@ -158,41 +158,12 @@ class OC_MEDIA_SUBSONIC{
             )
         );
 
-        // Find a shared music file owners
-        $statement = OCP\DB::prepare(
-            'SELECT song_path'
-            . ' FROM *PREFIX*media_songs'
-            . ' WHERE song_path LIKE :song_path'
-            . ' AND song_user = :song_user'
-        );
-        $results = $statement->execute(array(
-            ':song_path' => '/Shared/%',
-            ':song_user' => $this->user
-        ))->fetchAll();
-        if (count($results) > 0) {
-            $songPaths = array();
-            foreach ($results as $result) {
-                // addslashes() not better.
-                // Should use the quote() method of DB connection object to SQL escape, if possible.
-                $songPaths[] = addslashes(substr($result['song_path'], strlen('/Shared')));
-            }
-            $statement = OCP\DB::prepare(
-                'SELECT DISTINCT uid_owner'
-                . ' FROM *PREFIX*share'
-                . ' WHERE share_with = :share_with'
-                . " AND file_target IN ('" . implode("','", $songPaths) . "')" // will no match to folder share
+        $friends = OC_Media_Collection_Extra::getFriends($this->user);
+        foreach ($friends as $friend){
+            $musicFolders['musicFolder'][] = array(
+                'id' => $friend,
+                'name' => $friend
             );
-            $results = $statement->execute(array(
-                ':share_with' => $this->user
-            ))->fetchAll();
-            if (count($results) > 0) {
-                foreach ($results as $result) {
-                    $musicFolders['musicFolder'][] = array(
-                        'id' => $result['uid_owner'],
-                        'name' => $result['uid_owner']
-                    );
-                }
-            }
         }
 
         return array('musicFolders' => $musicFolders);

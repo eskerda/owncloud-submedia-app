@@ -150,4 +150,52 @@ class OC_MEDIA_COLLECTION_EXTRA{
             }
         }
     }
+
+    /**
+     * Get a list of friends from a user foo. A friend is someone that has
+     * shared some nice music with foo.
+     * @param integer user_id optional
+     * @return array the list of ids of foo friends.
+     */
+    public static function getFriends($user_id = false) {
+        if (!$user_id)
+            $user_id = $_SESSION['user_id'];
+
+        $friends = array();
+
+        $statement = OCP\DB::prepare(
+            'SELECT song_path
+            FROM *PREFIX*media_songs
+            WHERE song_path LIKE :song_path
+            AND song_user = :song_user'
+        );
+
+        $results = $statement->execute(array(
+            ':song_path' => '/Shared/%',
+            ':song_user' => $user_id
+        ))->fetchAll();
+
+        if (count($results) > 0) {
+            $songPaths = array();
+            foreach ($results as $result) {
+                // addslashes() not better.
+                // Should use the quote() method of DB connection object to SQL escape, if possible.
+                $songPaths[] = addslashes(substr($result['song_path'], strlen('/Shared')));
+            }
+            $statement = OCP\DB::prepare(
+                'SELECT DISTINCT uid_owner
+                FROM *PREFIX*share
+                WHERE share_with = :share_with
+                AND file_target IN (\''.implode("','", $songPaths)."')" // will no match to folder share
+            );
+            $results = $statement->execute(array(
+                ':share_with' => $user_id
+            ))->fetchAll();
+
+            foreach($results as $user){
+                $friends[] = $user['uid_owner'];
+            }
+        }
+        return $friends;
+    }
 }
