@@ -382,7 +382,10 @@ class OC_MEDIA_SUBSONIC{
             $artists = array();
         }
 
-        $albums = OC_Media_Collection::getAlbums($artist_id, $album_q);
+        if ($album_q)
+            $albums = OC_Media_Collection::getAlbums($artist_id, $album_q);
+        else
+            $albums = array();
 
         if (!empty($albums)){
             $album_id = $albums[0]['album_id'];
