@@ -785,7 +785,7 @@ class OC_MEDIA_SUBSONIC{
          */
 
         return array(
-            'id' => $song['song_id'],
+            'id' => intval($song['song_id']),
             'parent' => 'album_'.$song['song_album'],
             'title' => $song['song_name'],
             'album' => $album,
@@ -793,12 +793,12 @@ class OC_MEDIA_SUBSONIC{
             'isDir' => false,
             'coverArt' => 'album_'.$song['song_album'],
             //'created' =>
-            'duration' => $song['song_length'],
+            'duration' => intval($song['song_length']),
             'bitRate' => round($song['song_size'] / $song['song_length'] * 0.008),
-            'track' => $song['song_track'],
+            'track' => intval($song['song_track']),
             //'year' =>
             //'genre' =>
-            'size' => $song['song_size'],
+            'size' => intval($song['song_size']),
             'suffix' => 'mp3',
             'contentType' => 'audio/mpeg',
             'isVideo' => false,
