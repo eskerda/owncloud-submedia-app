@@ -98,7 +98,7 @@ class OC_MEDIA_SUBSONIC{
 
         // Password may be clear or hex encoded (with enc: prefix)
         if (substr($password,0,4)=="enc:"){
-            $password = PREG_REPLACE(
+            $password = preg_replace(
                 "'([\S,\d]{2})'e","chr(hexdec('\\1'))",substr($password,4)
             );
         }
