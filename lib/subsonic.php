@@ -372,19 +372,26 @@ class OC_MEDIA_SUBSONIC{
          *  And then, for each of these albums, adds the full list of songs.
          */
 
-        if (!isset($query['query']))
-            $q = '';
-        else
-            $q = preg_replace('/[\"\'\*"]/', '', $query['query']);
+        $q = isset($query['query'])
+            ? self::cleanLuceneString($query['query']) : '';
 
-        $q = trim(htmlentities($q));
+        $artistCount = isset($query['artistCount'])
+            ? intval($query['artistCount']) : 20;
 
-        $artistCount = (isset($query['artistCount']))?intval($query['artistCount']):20;
-        $artistOffset = (isset($query['artistOffset']))?intval($query['artistOffset']):0;
-        $albumCount = (isset($query['albumCount']))?intval($query['albumCount']):20;
-        $albumOffset = (isset($query['albumOffset']))?intval($query['albumOffset']):0;
-        $songCount = (isset($query['songCount']))?intval($query['songCount']):20;
-        $songOffset = (isset($query['songOffset']))?intval($query['songOffset']):0;
+        $artistOffset = isset($query['artistOffset'])
+            ? intval($query['artistOffset']) : 0;
+
+        $albumCount = isset($query['albumCount'])
+            ? intval($query['albumCount']) : 20;
+
+        $albumOffset = isset($query['albumOffset'])
+            ? intval($query['albumOffset']) : 0;
+
+        $songCount = isset($query['songCount'])
+            ? intval($query['songCount']) : 20;
+
+        $songOffset = isset($query['songOffset'])
+            ? intval($query['songOffset']) : 0;
 
         $artists = OC_Media_Collection::getArtists($q);
         $albums = OC_Media_Collection::getAlbums(0, $q);
