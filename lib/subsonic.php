@@ -282,12 +282,19 @@ class OC_MEDIA_SUBSONIC{
                     }
                     break;
                 default:
-                    // Return all albums
-                    $albums = OC_Media_Collection::getAlbums();
+                    $user = $sid[0];
+                    if ($user == '' || $user == 'all'){
+                        // Return all albums
+                        $albums = OC_Media_Collection::getAlbums();
+                    } else {
+                        $albums = OC_Media_Collection_Extra::getAlbums($user);
+                    }
+
                     foreach($albums as $album){
                         $artist = OC_Media_Collection::getArtistName($album['album_artist']);
                         $response['directory']['child'][] = OC_MEDIA_SUBSONIC::modelAlbumToSubsonic($album, $artist);
                     }
+
             }
 
             return $response;
