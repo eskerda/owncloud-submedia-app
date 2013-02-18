@@ -826,4 +826,10 @@ class OC_MEDIA_SUBSONIC{
         }
         return $params;
     }
+
+    private function cleanLuceneString($string){
+        $string = preg_replace('/[\"\*"]/', '', $string);
+        $string = trim(htmlentities($string));
+        return $string;
+    }
 }
