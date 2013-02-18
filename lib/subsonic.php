@@ -803,8 +803,8 @@ class OC_MEDIA_SUBSONIC{
             'contentType' => 'audio/mpeg',
             'isVideo' => false,
             'path' => sprintf('%s/%s/%d - %s.mp3',$artist,$album,$song['song_track'],$song['song_name']),
-            'albumId' => $song['song_album'],
-            'artistId' => $song['song_artist'],
+            'albumId' => 'album_'.$song['song_album'],
+            'artistId' => 'artist_'.$song['song_artist'],
             'type' => 'music'
         );
     }
