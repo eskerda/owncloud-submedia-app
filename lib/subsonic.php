@@ -411,7 +411,7 @@ class OC_MEDIA_SUBSONIC{
             foreach ($songs as $song){
                 $album = OC_Media_Collection::getAlbumName($song['song_album']);
                 $artist = OC_Media_Collection::getArtistName($song['song_artist']);
-                $matches[] = self::modelSongToSubsonic($song, $album, $artist);
+                $matches[] = self::modelSongToSubsonic($song, $artist, $album);
             }
         }
 
