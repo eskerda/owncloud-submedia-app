@@ -59,6 +59,7 @@ try {
             break;
         case 'getArtists':
             $response = $subsonic->getIndexes($_REQUEST, 180);
+            break;
         default:
             throw new Exception('Not Implemented', 30);
     }
