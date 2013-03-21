@@ -155,7 +155,7 @@ class OC_MEDIA_COLLECTION_EXTRA{
      * Get a list of friends from a user foo. A friend is someone that has
      * shared some nice music with foo.
      * @param integer user_id optional
-     * @return array the list of ids of foo friends.
+     * @return array the list of uids and count of files shared with foo.
      */
     public static function getFriends($user_id = false) {
         if (!$user_id)
@@ -178,23 +178,27 @@ class OC_MEDIA_COLLECTION_EXTRA{
         if (count($results) > 0) {
             $songPaths = array();
             foreach ($results as $result) {
-                // addslashes() not better.
-                // Should use the quote() method of DB connection object to SQL escape, if possible.
-                $songPaths[] = addslashes(substr($result['song_path'], strlen('/Shared')));
+                $songPath = substr($result['song_path'], strlen('/Shared'));
+                $dirPath = dirname($songPath);
+                if (!in_array($dirPath, $dirPaths))
+                    $dirPaths[] = dirname($songPath);
+                $songPaths[] = $songPath;
             }
+            $saneSongPaths = '(`'.implode("`,`", $songPaths).'`)';
+            $saneDirPaths = '(`'.implode("`,`", $dirPaths).'`)';
+
             $statement = OCP\DB::prepare(
-                'SELECT DISTINCT uid_owner
+                'SELECT uid_owner as uid, COUNT(*) as count
                 FROM *PREFIX*share
                 WHERE share_with = :share_with
-                AND file_target IN (\''.implode("','", $songPaths)."')" // will no match to folder share
+                AND file_target IN '.$saneSongPaths.'
+                OR file_target IN '.$saneDirPaths.'
+                GROUP BY uid_owner'
             );
-            $results = $statement->execute(array(
+
+            $friends = $statement->execute(array(
                 ':share_with' => $user_id
             ))->fetchAll();
-
-            foreach($results as $user){
-                $friends[] = $user['uid_owner'];
-            }
         }
         return $friends;
     }

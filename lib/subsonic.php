@@ -161,8 +161,8 @@ class OC_MEDIA_SUBSONIC{
         $friends = OC_Media_Collection_Extra::getFriends($this->user);
         foreach ($friends as $friend){
             $musicFolders['musicFolder'][] = array(
-                'id' => $friend,
-                'name' => $friend
+                'id' => $friend['uid'],
+                'name' => $friend['uid']
             );
         }
 
