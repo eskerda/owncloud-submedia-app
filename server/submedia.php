@@ -60,6 +60,9 @@ try {
         case 'getArtists':
             $response = $subsonic->getIndexes($_REQUEST, 180);
             break;
+        case 'getCollectionInfo':
+            $response = $subsonic->getCollectionInfo($_REQUEST);
+            break;
         default:
             throw new Exception('Not Implemented', 30);
     }

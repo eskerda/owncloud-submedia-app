@@ -811,6 +811,19 @@ class OC_MEDIA_SUBSONIC{
         return $r;
     }
 
+    public function getCollectionInfo($params) {
+        $friends = OC_Media_Collection_Extra::getFriends();
+        return array(
+            'collection' => intval(OC_Media_Collection::getSongCount()),
+            'sources' => array_map(function($friend){
+                    return array(
+                        'owner' => $friend['uid'],
+                        'count' => intval($friend['count'])
+                    );
+            }, $friends)
+        );
+    }
+
     private function modelAlbumToSubsonic($album, $artist, $version = 170){
         if ($version <= 170){
             return array(
