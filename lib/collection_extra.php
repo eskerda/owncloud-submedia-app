@@ -125,7 +125,7 @@ class OC_MEDIA_COLLECTION_EXTRA{
                 if (count($results) > 0) {
                     $songPaths = array();
                     foreach ($results as $result) {
-                        $songPaths[] = 'song_path LIKE \'/Shared'.$result['file_target'].'%\'';
+                        $songPaths[] = 'song_path LIKE `/Shared'.$result['file_target'].'%`';
                     }
                     $statement = OCP\DB::prepare(
                         'SELECT DISTINCT artist_name, artist_id
@@ -242,7 +242,7 @@ class OC_MEDIA_COLLECTION_EXTRA{
                 if (count($results) > 0) {
                     $songPaths = array();
                     foreach ($results as $result) {
-                        $songPaths[] = 'song_path LIKE \'/Shared'.$result['file_target'].'%\'';
+                        $songPaths[] = 'song_path LIKE `/Shared'.$result['file_target'].'%`';
                     }
                     $statement = OCP\DB::prepare(
                         'SELECT DISTINCT album_name, album_id
