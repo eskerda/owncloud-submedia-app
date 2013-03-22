@@ -449,9 +449,12 @@ class OC_MEDIA_SUBSONIC{
         $songOffset = isset($query['songOffset'])
             ? intval($query['songOffset']) : 0;
 
-        $artists = OC_Media_Collection::getArtists($q);
-        $albums = OC_Media_Collection::getAlbums(0, $q);
-        $songs = OC_Media_Collection::getSongs(0, 0, $q);
+        $owner_id = isset($query['owner'])
+            ? $query['owner'] : false;
+
+        $artists = OC_Media_Collection_Extra::getArtists($q, false, $owner_id);
+        $albums = OC_Media_Collection_Extra::getAlbums(0, $q, false, $owner_id);
+        $songs = OC_Media_Collection_Extra::getSongs(0, 0, $q, false, $owner_id);
 
         /** Dummy Cache for album and artists ids to name **/
         $art_ch = array();
@@ -464,7 +467,7 @@ class OC_MEDIA_SUBSONIC{
                 'name' => $artist['artist_name'],
                 'id' => 'artist_'.$artist['artist_id']
             );
-            $albums = array_merge($albums, OC_Media_Collection::getAlbums($artist['artist_id']));
+            $albums = array_merge($albums, OC_Media_Collection_Extra::getAlbums($artist['artist_id'], '', false, $owner_id));
 
             $art_ch[$artist['artist_id']] = $artist['artist_name'];
         }
@@ -474,7 +477,7 @@ class OC_MEDIA_SUBSONIC{
                 $art_ch[$album['album_artist']] = OC_Media_Collection::getArtistName($album['album_artist']);
             }
             $r['album'][] = OC_MEDIA_SUBSONIC::modelAlbumToSubsonic($album, $art_ch[$album['album_artist']]);
-            $songs = array_merge($songs, OC_Media_Collection::getSongs(0,$album['album_id']));
+            $songs = array_merge($songs, OC_Media_Collection_Extra::getSongs(0,$album['album_id'], '', false, $owner_id));
             $alb_ch[$album['album_id']] = $album['album_name'];
         }
 
