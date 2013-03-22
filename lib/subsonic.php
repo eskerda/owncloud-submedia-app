@@ -133,18 +133,7 @@ class OC_MEDIA_SUBSONIC{
             In the future we could, for instance, separate shared
             music into different folders.
         */
-        /*
-        return array(
-            'musicFolders' => array(
-                    'musicFolder' => array(
-                        'id' => 0,
-                        'name' => $this->user,
-                    )
-            )
-        );
-        */
 
-        // Should be better array index and id value
         $musicFolders = array(
             'musicFolder' => array(
                 array(
