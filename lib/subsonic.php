@@ -279,7 +279,7 @@ class OC_MEDIA_SUBSONIC{
                         // Return all albums
                         $albums = OC_Media_Collection::getAlbums();
                     } else {
-                        $albums = OC_Media_Collection_Extra::getAlbums($user);
+                        $albums = OC_Media_Collection_Extra::getAlbums(0,'',false,$user);
                     }
 
                     foreach($albums as $album){

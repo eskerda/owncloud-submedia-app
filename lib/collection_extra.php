@@ -194,68 +194,53 @@ class OC_MEDIA_COLLECTION_EXTRA{
      * @param integer owner_id optional
      * @return array the list of albums available to me, owned or shared
      */
-    public static function getAlbums($owner_id = false) {
+    public static function getAlbums($artist = 0, $query = '%', $exact = false, $owner_id = false) {
         if (!$owner_id)
-            return OC_MEDIA_COLLECTION::getArtists();
-        else{
-            if ($owner_id == $_SESSION['user_id']){
-                $statement = OCP\DB::prepare(
-                    'SELECT DISTINCT album_name, album_id
-                    FROM *PREFIX*media_albums
-                    INNER JOIN *PREFIX*media_songs
-                    ON album_id = song_album
-                    WHERE album_name LIKE :album_name
-                    AND song_path NOT LIKE :song_path
-                    AND song_user = :song_user
-                    ORDER BY album_name'
-                );
-                    $results = $statement->execute(array(
-                        ':album_name' => '%',
-                        ':song_path' => '/Shared/%',
-                        ':song_user' => $owner_id
-                    ))->fetchAll();
-                if (count($results) > 0) {
-                    return $results;
-                }
+            return OC_MEDIA_COLLECTION::getAlbums($artist, $query, $exact);
+
+        $uid = $_SESSION['user_id'];
+        $params = array();
+        $cmd =
+            'SELECT DISTINCT album_name, album_id, album_artist
+            FROM *PREFIX*media_albums
+            INNER JOIN *PREFIX*media_songs
+            ON album_id = song_album
+            WHERE album_name LIKE :query
+            AND song_user = :song_user ';
+
+        if ($query != '%') {
+            $cmd.="AND `album_name` LIKE :query ";
+            if (!$exact)
+                $query="%$query%";
+            $params[':query'] = $query;
+        }
+
+        if ($owner_id == $uid) {
+            $cmd.='AND song_path NOT LIKE :song_path ';
+            $params[':song_user'] = $uid;
+            $params[':song_path'] = '/Shared/%';
+        } else {
+            $fpaths = self::getSharedFilePaths($owner_id);
+
+            if (count($fpaths) > 0) {
+                $songPaths = array();
+                foreach ($fpaths as $fpath)
+                    $songPaths[] = 'song_path LIKE `/Shared'.$fpath['file_target'].'%` ';
             } else {
-                $statement = OCP\DB::prepare(
-                    'SELECT file_target
-                    FROM *PREFIX*share
-                    WHERE share_with = :share_with
-                    AND uid_owner = :uid_owner'
-                );
-                $results = $statement->execute(array(
-                    ':share_with' => $_SESSION['user_id'],
-                    ':uid_owner' => $owner_id
-                ))->fetchAll();
-
-                if (count($results) > 0) {
-                    $songPaths = array();
-                    foreach ($results as $result) {
-                        $songPaths[] = 'song_path LIKE `/Shared'.$result['file_target'].'%`';
-                    }
-                    $statement = OCP\DB::prepare(
-                        'SELECT DISTINCT album_name, album_id
-                        FROM *PREFIX*media_albums
-                        INNER JOIN *PREFIX*media_songs
-                        ON album_id = song_album
-                        WHERE album_name LIKE :album_name
-                        AND '.implode(" OR ", $songPaths).'
-                        AND song_user = :song_user
-                        ORDER BY album_name'
-                    );
-                    $results = $statement->execute(array(
-                        ':album_name' => '%',
-                        ':song_user' => $_SESSION['user_id']
-                    ))->fetchAll();
-
-                    if (count($results) > 0) {
-                        return $results;
-                    }
-                }
+                // This owner is not sharing anything with me
                 return array();
             }
+
+            $cmd.= 'AND ('.implode("OR ", $songPaths).') ';
+            $params[':song_user'] = $uid;
         }
+
+        $cmd.='ORDER BY album_name';
+
+        $album_statement = OCP\DB::prepare($cmd);
+        $results = $album_statement->execute($params)->fetchAll();
+
+        return $results;
     }
 
     private function getSharedFilePaths($owner_id){
