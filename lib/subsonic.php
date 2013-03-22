@@ -192,7 +192,7 @@ class OC_MEDIA_SUBSONIC{
         $musicFolderId = !$musicFolderId && isset($params['owner'])
             ? $params['owner'] : $musicFolderId;
 
-        $artists = OC_Media_Collection_Extra::getArtists($musicFolderId);
+        $artists = OC_Media_Collection_Extra::getArtists('%', false, $musicFolderId);
 
         if ($version > 170)
             $top_root = 'artists';
