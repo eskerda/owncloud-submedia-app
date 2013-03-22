@@ -365,11 +365,14 @@ class OC_MEDIA_SUBSONIC{
         $any    = isset($query['any'])
                     ? self::cleanLuceneString($query['any'])    : false;
 
+        $owner = isset($query['owner']) ? $query['owner'] : false;
+
+
         if ($any)
             throw new Exception('Query parameter \'any\' not implemented', 30);
 
         if ($artist_q) {
-            $artists = OC_Media_Collection::getArtists($artist_q);
+            $artists = OC_Media_Collection_Extra::getArtists($artist_q, false, $owner);
             if (empty($artists)){
                 $artist_id = 0;
             } else {
@@ -382,7 +385,7 @@ class OC_MEDIA_SUBSONIC{
         }
 
         if ($album_q)
-            $albums = OC_Media_Collection::getAlbums($artist_id, $album_q);
+            $albums = OC_Media_Collection_Extra::getAlbums($artist_id, $album_q, false, $owner);
         else
             $albums = array();
 
@@ -395,8 +398,8 @@ class OC_MEDIA_SUBSONIC{
         if (empty($artists) && empty($albums) && !$title_q){
             $matches = array();
         } else {
-            $songs = OC_Media_Collection::getSongs(
-                $artist_id, $album_id, $title_q
+            $songs = OC_Media_Collection_Extra::getSongs(
+                $artist_id, $album_id, $title_q, false, $owner
             );
 
             $matches = array();
