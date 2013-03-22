@@ -41,11 +41,12 @@
 
    <field>
     <name>created</name>
-    <type>timestamp</type>
+    <type>text</type>
     <default></default>
-    <notnull>false</notnull>
-    <length></length>
+    <notnull>true</notnull>
+    <length>255</length>
    </field>
+
   </declaration>
 
  </table>
