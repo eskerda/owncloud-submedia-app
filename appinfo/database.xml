@@ -52,7 +52,7 @@
 
  <table>
 
-  <name>*dbprefix*submedia_playlist_song</name>
+  <name>*dbprefix*submedia_playlists_songs</name>
 
   <declaration>
 
