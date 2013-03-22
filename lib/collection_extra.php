@@ -271,4 +271,19 @@ class OC_MEDIA_COLLECTION_EXTRA{
             }
         }
     }
+
+    private function getSharedFilePaths($owner_id){
+        $uid = $_SESSION['user_id'];
+
+        $fpath_st = OCP\DB::prepare(
+            'SELECT file_target
+            FROM *PREFIX*share
+            WHERE share_with = :share_with
+            AND uid_owner = :uid_owner');
+
+        return $fpath_st->execute(array(
+            ':share_with' => $uid,
+            ':uid_owner' => $owner_id
+        ))->fetchAll();
+    }
 }
