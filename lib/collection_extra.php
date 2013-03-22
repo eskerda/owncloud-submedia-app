@@ -312,7 +312,7 @@ class OC_MEDIA_COLLECTION_EXTRA{
         return $results;
     }
 
-    private function getSharedFilePaths($owner_id){
+    private static function getSharedFilePaths($owner_id){
         $uid = $_SESSION['user_id'];
 
         $fpath_st = OCP\DB::prepare(
