@@ -69,7 +69,7 @@
     <name>song_id</name>
     <type>integer</type>
     <default></default>
-    <notnull>false</notnull>
+    <notnull>true</notnull>
     <length>4</length>
    </field>
 
