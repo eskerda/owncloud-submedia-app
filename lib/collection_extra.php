@@ -115,11 +115,12 @@ class OC_MEDIA_COLLECTION_EXTRA{
             $params[':song_path'] = '/Shared/%';
         } else {
             $fpaths = self::getSharedFilePaths($owner_id);
-
             if (count($fpaths) > 0) {
                 $songPaths = array();
-                foreach ($fpaths as $fpath)
-                    $songPaths[] = 'song_path LIKE `/Shared'.$fpath['file_target'].'%` ';
+                foreach ($fpaths as $fpath) {
+                    $cleanPath = addslashes('/Shared'.$fpath['file_target']);
+                    $songPaths[] = 'song_path LIKE "'.$cleanPath.'%" ';
+                }
             } else {
                 // This owner is not sharing anything with me
                 return array();
@@ -165,22 +166,21 @@ class OC_MEDIA_COLLECTION_EXTRA{
             $songPaths = array();
             foreach ($results as $result) {
                 $songPath = substr($result['song_path'], strlen('/Shared'));
-                $dirPath = dirname($songPath);
+                $dirPath = addslashes(dirname($songPath));
                 if (!in_array($dirPath, $dirPaths))
-                    $dirPaths[] = dirname($songPath);
-                $songPaths[] = $songPath;
+                    $dirPaths[] = $dirPath;
+                $songPaths[] = addslashes($songPath);
             }
-            $saneSongPaths = '(`'.implode("`,`", $songPaths).'`)';
-            $saneDirPaths = '(`'.implode("`,`", $dirPaths).'`)';
+            $saneSongPaths = '("'.implode('","', $songPaths).'") ';
+            $saneDirPaths = '("'.implode('","', $dirPaths).'") ';
 
-            $statement = OCP\DB::prepare(
-                'SELECT uid_owner as uid, COUNT(*) as count
+            $query = 'SELECT uid_owner as uid, COUNT(*) as count
                 FROM *PREFIX*share
                 WHERE share_with = :share_with
                 AND file_target IN '.$saneSongPaths.'
                 OR file_target IN '.$saneDirPaths.'
-                GROUP BY uid_owner'
-            );
+                GROUP BY uid_owner';
+            $statement = OCP\DB::prepare($query);
 
             $friends = $statement->execute(array(
                 ':share_with' => $user_id
@@ -224,8 +224,10 @@ class OC_MEDIA_COLLECTION_EXTRA{
 
             if (count($fpaths) > 0) {
                 $songPaths = array();
-                foreach ($fpaths as $fpath)
-                    $songPaths[] = 'song_path LIKE `/Shared'.$fpath['file_target'].'%` ';
+                foreach ($fpaths as $fpath){
+                    $cleanPath = addslashes("/Shared".$fpath['file_target']);
+                    $songPaths[] = 'song_path LIKE "'.$cleanPath.'%" ';
+                }
             } else {
                 // This owner is not sharing anything with me
                 return array();
@@ -239,7 +241,6 @@ class OC_MEDIA_COLLECTION_EXTRA{
 
         $album_statement = OCP\DB::prepare($cmd);
         $results = $album_statement->execute($params)->fetchAll();
-
         return $results;
     }
 
@@ -295,8 +296,10 @@ class OC_MEDIA_COLLECTION_EXTRA{
             $fpaths = self::getSharedFilePaths($owner_id);
             if (count($fpaths) > 0) {
                 $songPaths = array();
-                foreach ($fpaths as $fpath)
-                    $songPaths[] = 'song_path LIKE `/Shared'.$fpath['file_target'].'%` ';
+                foreach ($fpaths as $fpath){
+                    $cleanPath = addslashes('/Shared'.$fpath['file_target'].'%');
+                    $songPaths[] = 'song_path LIKE "'.$cleanPath.'" ';
+                }
             } else {
                 // This owner is not sharing anything with me
                 return array();
