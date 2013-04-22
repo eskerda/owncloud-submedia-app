@@ -5,20 +5,20 @@
 *
 * @author Lluis Esquerda
 * @copyright 2012 Blue Systems contact@blue-systems.com
-* 
+*
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
-* License as published by the Free Software Foundation; either 
+* License as published by the Free Software Foundation; either
 * version 3 of the License, or any later version.
-* 
+*
 * This library is distributed in the hope that it will be useful,
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 * GNU AFFERO GENERAL PUBLIC LICENSE for more details.
-*  
-* You should have received a copy of the GNU Lesser General Public 
+*
+* You should have received a copy of the GNU Lesser General Public
 * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
-* 
+*
 */
 
 /***
@@ -39,7 +39,7 @@ Error codes
 30  Incompatible Subsonic REST protocol version. Server must upgrade.
 40  Wrong username or password.
 50  User is not authorized for the given operation.
-60  The trial period for the Subsonic server is over. Please donate to get 
+60  The trial period for the Subsonic server is over. Please donate to get
     a license key. Visit subsonic.org for details.
 70  The requested data was not found.
 
@@ -51,6 +51,8 @@ class OC_MEDIA_SUBSONIC{
     var $version = false;
     var $client = false;
     var $format = 'xml';
+
+    public static $api_version = "1.8.0";
 
     protected static $data_path = 'apps/submedia/lib/data/';
 
@@ -86,7 +88,7 @@ class OC_MEDIA_SUBSONIC{
             $this->version = $version;
             $this->client = $client;
             $this->format = $format;
-            return $this;   
+            return $this;
         } else {
             throw new Exception("Wrong username or password", 40);
         }
@@ -96,7 +98,7 @@ class OC_MEDIA_SUBSONIC{
 
         // Password may be clear or hex encoded (with enc: prefix)
         if (substr($password,0,4)=="enc:"){
-            $password = PREG_REPLACE(
+            $password = preg_replace(
                 "'([\S,\d]{2})'e","chr(hexdec('\\1'))",substr($password,4)
             );
         }
@@ -115,7 +117,7 @@ class OC_MEDIA_SUBSONIC{
     }
 
     /**
-     * @return  Returns all configured top-level music folders. Takes no 
+     * @return  Returns all configured top-level music folders. Takes no
      *          extra parameters.
      */
     public function getMusicFolders(){
@@ -131,63 +133,26 @@ class OC_MEDIA_SUBSONIC{
             In the future we could, for instance, separate shared
             music into different folders.
         */
-        /*
-        return array(
-            'musicFolders' => array(
-                    'musicFolder' => array(
-                        'id' => 0,
-                        'name' => $this->user,
-                    )
-            )
-        );
-        */
 
-        // Should be better array index and id value
         $musicFolders = array(
             'musicFolder' => array(
-                'id' => 'all',
-                'name' => 'All'
-            ),
-            array(
-                'id' => $this->user,
-                'name' => $this->user
+                array(
+                    'id' => 'all',
+                    'name' => 'All'
+                ),
+                array(
+                    'id' => $this->user,
+                    'name' => $this->user
+                )
             )
         );
-        // Find a shared music file owners
-        $statement = OCP\DB::prepare(
-            'SELECT song_path'
-            . ' FROM *PREFIX*media_songs'
-            . ' WHERE song_path LIKE :song_path'
-            . ' AND song_user = :song_user'
-        );
-        $results = $statement->execute(array(
-            ':song_path' => '/Shared/%',
-            ':song_user' => $this->user
-        ))->fetchAll();
-        if (count($results) > 0) {
-            $songPaths = array();
-            foreach ($results as $result) {
-                // addslashes() not better.
-                // Should use the quote() method of DB connection object to SQL escape, if possible.
-                $songPaths[] = addslashes(substr($result['song_path'], strlen('/Shared')));
-            }
-            $statement = OCP\DB::prepare(
-                'SELECT DISTINCT uid_owner'
-                . ' FROM *PREFIX*share'
-                . ' WHERE share_with = :share_with'
-                . " AND file_target IN ('" . implode("','", $songPaths) . "')" // will no match to folder share
+
+        $friends = OC_Media_Collection_Extra::getFriends($this->user);
+        foreach ($friends as $friend){
+            $musicFolders['musicFolder'][] = array(
+                'id' => $friend['uid'],
+                'name' => $friend['uid']
             );
-            $results = $statement->execute(array(
-                ':share_with' => $this->user
-            ))->fetchAll();
-            if (count($results) > 0) {
-                foreach ($results as $result) {
-                    $musicFolders[] = array(
-                        'id' => $result['uid_owner'],
-                        'name' => $result['uid_owner']
-                    );
-                }
-            }
         }
 
         return array('musicFolders' => $musicFolders);
@@ -195,11 +160,11 @@ class OC_MEDIA_SUBSONIC{
 
     /**
      * @brief Returns an indexed structure of all artists.
-     * @param string optional $musicFolderId If specified, only return artists in the music folder with the given ID. 
+     * @param string optional $musicFolderId If specified, only return artists in the music folder with the given ID.
      * @param int optional $ifModifiedSince If specified, only return a result if the artist collection has changed since the given time (in milliseconds since 1 Jan 1970).
      * @return associative array
      */
-    public function getIndexes($musicFolderId = null, $ifModifiedSince = null){
+    public function getIndexes($params, $version = 170){
         /** We want something similar to this mess...
         <indexes lastModified="1347639481261">
             <shortcut name="Podcast" id="920"/>
@@ -214,71 +179,29 @@ class OC_MEDIA_SUBSONIC{
             </index>
             ...
         **/
-        $artists = array();
-        if (empty($musicFolderId) || $musicFolderId == 'all') {
-            $artists = OC_Media_Collection::getArtists();
-        }
-        else if ($musicFolderId == $this->user) {
-            // Get the list of artists without a shared music
-            $statement = OCP\DB::prepare(
-                'SELECT DISTINCT artist_name, artist_id'
-                . ' FROM *PREFIX*media_artists'
-                . ' INNER JOIN *PREFIX*media_songs'
-                . ' ON artist_id = song_artist'
-                . ' WHERE artist_name LIKE :artist_name'
-                . ' AND song_path NOT LIKE :song_path'
-                . ' AND song_user = :song_user'
-                . ' ORDER BY artist_name'
-            );
-            $results = $statement->execute(array(
-                'artist_name' => '%',
-                ':song_path' => '/Shared/%',
-                ':song_user' => $this->user
-            ))->fetchAll();
-            if (count($results) > 0) {
-                $artists = $results;
-            }
-        }
-        else if (!empty($musicFolderId)) {
-            // Get the list of artists of a shared music
-            $statement = OCP\DB::prepare(
-                'SELECT file_target'
-                . ' FROM *PREFIX*share'
-                . ' WHERE share_with = :share_with'
-                . ' AND uid_owner = :uid_owner'
-            );
-            $results = $statement->execute(array(
-                ':share_with' => $this->user,
-                ':uid_owner' => $musicFolderId
-            ))->fetchAll();
-            if (count($results) > 0) {
-                $songPaths = array();
-                foreach ($results as $result) {
-                    $songPaths[] = '/Shared' . $result['file_target'];
-                }
-                $statement = OCP\DB::prepare(
-                    'SELECT DISTINCT artist_name, artist_id'
-                    . ' FROM *PREFIX*media_artists'
-                    . ' INNER JOIN *PREFIX*media_songs'
-                    . ' ON artist_id = song_artist'
-                    . ' WHERE artist_name LIKE :artist_name'
-                    . " AND song_path IN ('" . implode("','", $songPaths) . "')" // will no match to folder share
-                    . ' AND song_user = :song_user'
-                    . ' ORDER BY artist_name'
-                );
-                $results = $statement->execute(array(
-                    'artist_name' => '%',
-                    ':song_user' => $this->user
-                ))->fetchAll();
-                if (count($results) > 0) {
-                    $artists = $results;
-                }
-            }
-        }
+
+        $ifModifiedSince = isset($params['ifModifiedSince'])
+            ? $params['ifModifiedSince'] : false;
+
+        $musicFolderId = isset($params['musicFolderId']) && $params['musicFolderId'] != 'all'
+            ? $params['musicFolderId'] : false;
+
+        $musicFolderId = !$musicFolderId && isset($params['id']) && $params['id'] != 'all'
+            ? $params['id'] : $musicFolderId;
+
+        $musicFolderId = !$musicFolderId && isset($params['owner'])
+            ? $params['owner'] : $musicFolderId;
+
+        $artists = OC_Media_Collection_Extra::getArtists('%', false, $musicFolderId);
+
+        if ($version > 170)
+            $top_root = 'artists';
+        else
+            $top_root = 'indexes';
 
         // TODO: Find a way to get the last modified time
         $response = array(
-            'indexes' => array(
+            $top_root => array(
                 'lastModified' => strval(round(microtime(true)*100)),
                 'index' => array()
             )
@@ -293,18 +216,17 @@ class OC_MEDIA_SUBSONIC{
                 // should be grouped under #
                 $letter = '#';
             }
-            if (!isset($response['indexes']['index'][$letter]))
-                $response['indexes']['index'][$letter] = array();
+            if (!isset($response[$top_root]['index'][$letter]))
+                $response[$top_root]['index'][$letter] = array();
 
-            $response['indexes']['index'][$letter][] = array(
-                'id' => 'artist_'.$artist['artist_id'],
-                'name' => $artist['artist_name']);
+            $response[$top_root]['index'][$letter][] =
+                self::modelArtistToSubsonic($artist, $version);
         }
         if ($this->format == 'json' || $this->format == 'jsonp'){
-            $letters = $response['indexes']['index'];
-            $response['indexes']['index'] = array();
+            $letters = $response[$top_root]['index'];
+            $response[$top_root]['index'] = array();
             foreach ($letters as $letter=>$artists){
-                $response['indexes']['index'][] = array(
+                $response[$top_root]['index'][] = array(
                     'name' => $letter,
                     'artist' => $artists
                 );
@@ -333,7 +255,7 @@ class OC_MEDIA_SUBSONIC{
                     $album = OC_Media_Collection::getAlbumName($album_id);
                     $songs = OC_Media_Collection::getSongs(0, $album_id);
                     $response['directory']['name'] = $album;
-                    
+
                     foreach ($songs as $song){
                         if (!isset($artist)){
                             $artist = OC_Media_Collection::getArtistName($song['song_artist']);
@@ -352,12 +274,19 @@ class OC_MEDIA_SUBSONIC{
                     }
                     break;
                 default:
-                    // Return all albums
-                    $albums = OC_Media_Collection::getAlbums();
+                    $user = $sid[0];
+                    if ($user == '' || $user == 'all'){
+                        // Return all albums
+                        $albums = OC_Media_Collection::getAlbums();
+                    } else {
+                        $albums = OC_Media_Collection_Extra::getAlbums(0,'',false,$user);
+                    }
+
                     foreach($albums as $album){
                         $artist = OC_Media_Collection::getArtistName($album['album_artist']);
                         $response['directory']['child'][] = OC_MEDIA_SUBSONIC::modelAlbumToSubsonic($album, $artist);
                     }
+
             }
 
             return $response;
@@ -412,7 +341,86 @@ class OC_MEDIA_SUBSONIC{
         }
     }
 
-    function search ($query){
+    function search ($query, $version = 2){
+        switch ($version) {
+            case 1:
+                return self::search_1($query);
+            case 2:
+                return self::search_2($query);
+            default:
+                throw new Exception('Not implemented', 30);
+        }
+    }
+
+    private function search_1 ($query){
+        $count  = isset($query['count'])  ? intval($query['count'])  : 20;
+        $offset = isset($query['offset']) ? intval($query['offset']) : 0;
+
+        $artist_q = isset($query['artist'])
+                    ? self::cleanLuceneString($query['artist']) : false;
+        $album_q  = isset($query['album'])
+                    ? self::cleanLuceneString($query['album'])  : false;
+        $title_q  = isset($query['title'])
+                    ? self::cleanLuceneString($query['title'])  : false;
+        $any    = isset($query['any'])
+                    ? self::cleanLuceneString($query['any'])    : false;
+
+        $owner = isset($query['owner']) ? $query['owner'] : false;
+
+
+        if ($any)
+            throw new Exception('Query parameter \'any\' not implemented', 30);
+
+        if ($artist_q) {
+            $artists = OC_Media_Collection_Extra::getArtists($artist_q, false, $owner);
+            if (empty($artists)){
+                $artist_id = 0;
+            } else {
+                // Pick the only one artist, or the first one in the search result
+                $artist_id = $artists[0]['artist_id'];
+            }
+        } else {
+            $artist_id = 0;
+            $artists = array();
+        }
+
+        if ($album_q)
+            $albums = OC_Media_Collection_Extra::getAlbums($artist_id, $album_q, false, $owner);
+        else
+            $albums = array();
+
+        if (!empty($albums)){
+            $album_id = $albums[0]['album_id'];
+        } else {
+            $album_id = 0;
+        }
+
+        if (empty($artists) && empty($albums) && !$title_q){
+            $matches = array();
+        } else {
+            $songs = OC_Media_Collection_Extra::getSongs(
+                $artist_id, $album_id, $title_q, false, $owner
+            );
+
+            $matches = array();
+            foreach ($songs as $song){
+                $album = OC_Media_Collection::getAlbumName($song['song_album']);
+                $artist = OC_Media_Collection::getArtistName($song['song_artist']);
+                $matches[] = self::modelSongToSubsonic($song, $artist, $album);
+            }
+        }
+
+        $response = array('totalHits' => count($matches), 'offset' => $offset);
+
+        if (count($matches) > 0) {
+            $matches = array_slice($matches, $offset, $count);
+            $response['match'] = $matches;
+        }
+
+        return array('searchResult' => $response);
+    }
+
+    private function search_2 ($query){
         /** Sorry for this messy function, Subsonic API search results are
          *  THAT lousy. First, it looks for artists, albums and songs that
          *  match a query.
@@ -420,50 +428,47 @@ class OC_MEDIA_SUBSONIC{
          *  And then, for each of these albums, adds the full list of songs.
          */
 
-        if (!isset($query['query']))
-            $q = '';
-        else{
-            /* Only allow valid characters */
-            $q = preg_replace('/[^a-z0-9\ ]/', '', $query['query']);
-            /* Remove one letter words */
-            $q = preg_replace('/\s+\S{1,2}(?!\S)|(?<!\S)\S{1,2}\s+/', '', $q);
-            if (strlen($q) < 4)
-                return array('searchResult2'=>'');
-        }
-        $q = trim(htmlentities($q));
+        $q = isset($query['query'])
+            ? self::cleanLuceneString($query['query']) : '';
 
-        if (!isset($query['artistCount']))
-            $artistCount = 10;
-        else
-            $artistCount = $query['artistCount'];
+        $artistCount = isset($query['artistCount'])
+            ? intval($query['artistCount']) : 20;
 
-        if (!isset($query['albumCount']))
-            $albumCount = 20;
-        else
-            $albumCount = $query['albumCount'];
+        $artistOffset = isset($query['artistOffset'])
+            ? intval($query['artistOffset']) : 0;
 
-        if (!isset($query['songCount']))
-            $songCount = 25;
-        else
-            $songCount = $query['songCount'];
+        $albumCount = isset($query['albumCount'])
+            ? intval($query['albumCount']) : 20;
 
-        $artists = OC_Media_Collection::getArtists($q);
-        $albums = OC_Media_Collection::getAlbums(0, $q);
-        $songs = OC_Media_Collection::getSongs(0, 0, $q);
+        $albumOffset = isset($query['albumOffset'])
+            ? intval($query['albumOffset']) : 0;
+
+        $songCount = isset($query['songCount'])
+            ? intval($query['songCount']) : 20;
+
+        $songOffset = isset($query['songOffset'])
+            ? intval($query['songOffset']) : 0;
+
+        $owner_id = isset($query['owner'])
+            ? $query['owner'] : false;
+
+        $artists = OC_Media_Collection_Extra::getArtists($q, false, $owner_id);
+        $albums = OC_Media_Collection_Extra::getAlbums(0, $q, false, $owner_id);
+        $songs = OC_Media_Collection_Extra::getSongs(0, 0, $q, false, $owner_id);
 
         /** Dummy Cache for album and artists ids to name **/
         $art_ch = array();
         $alb_ch = array();
 
         $r = array('artist' => array(), 'album'=>array(), 'song' => array());
-        
+
         foreach ($artists as $artist){
             $r['artist'][] = array(
                 'name' => $artist['artist_name'],
                 'id' => 'artist_'.$artist['artist_id']
             );
-            $albums = array_merge($albums, OC_Media_Collection::getAlbums($artist['artist_id']));
-            
+            $albums = array_merge($albums, OC_Media_Collection_Extra::getAlbums($artist['artist_id'], '', false, $owner_id));
+
             $art_ch[$artist['artist_id']] = $artist['artist_name'];
         }
 
@@ -472,7 +477,7 @@ class OC_MEDIA_SUBSONIC{
                 $art_ch[$album['album_artist']] = OC_Media_Collection::getArtistName($album['album_artist']);
             }
             $r['album'][] = OC_MEDIA_SUBSONIC::modelAlbumToSubsonic($album, $art_ch[$album['album_artist']]);
-            $songs = array_merge($songs, OC_Media_Collection::getSongs(0,$album['album_id']));
+            $songs = array_merge($songs, OC_Media_Collection_Extra::getSongs(0,$album['album_id'], '', false, $owner_id));
             $alb_ch[$album['album_id']] = $album['album_name'];
         }
 
@@ -487,7 +492,16 @@ class OC_MEDIA_SUBSONIC{
             $r['song'][] = OC_MEDIA_SUBSONIC::modelSongToSubsonic($song, $art_ch[$song['song_artist']], $alb_ch[$song['song_album']]);
         }
 
-        if (sizeof($r) > 0)
+        $r['artist'] = array_slice($r['artist'], $artistOffset, $artistCount);
+        $r['album'] = array_slice($r['album'], $albumOffset, $albumCount);
+        $r['song'] = array_slice($r['song'], $songOffset, $songCount);
+
+        foreach ($r as $key=>$value) {
+            if (count($value) == 0)
+                unset($r[$key]);
+        }
+
+        if (count($r) > 0)
             return array('searchResult2'=>$r);
         else
             return array('searchResult2'=>'');
@@ -524,9 +538,9 @@ class OC_MEDIA_SUBSONIC{
     }
 
     function createPlaylist($query, $query_string){
-        // Yes.. Subsonic API expects &songId=1&songId=2&songId=3 
+        // Yes.. Subsonic API expects &songId=1&songId=2&songId=3
         $params = $this->requestDupedParams($query_string);
-        
+
         $playlist_id = (isset($query['playlistId']))?$query['playlistId']:false;
         $name = (isset($query['name']))?$query['name']:false;
         $song_ids = (isset($params['songId']))?$params['songId']:array();
@@ -604,7 +618,7 @@ class OC_MEDIA_SUBSONIC{
             $response['playlist']['entry'] = $response['entry'];
             unset($response['entry']);
         }
-        return $response;    
+        return $response;
     }
 
     function outputCoverArt($params){
@@ -612,13 +626,13 @@ class OC_MEDIA_SUBSONIC{
 
         $id = (isset($params['id']))?explode('_',$params['id']):false;
         $size = (
-            isset($params['size']) && 
+            isset($params['size']) &&
             intval($params['size']) > 1)?intval($params['size']):200;
-        
+
         if (!$id){
             throw new Exception('Required string parameter \'id\' not present', 10);
         }
-        
+
         if ($size > 500)
             $size = 500;
 
@@ -633,9 +647,9 @@ class OC_MEDIA_SUBSONIC{
         $artist_name = OC_Media_Collection::getArtistName($songs[0]['song_artist']);
 
         $lastFm = new OC_Media_LastFM($lastfm_key);
-        
+
         $image_url = $lastFm::getCoverArt(
-                html_entity_decode($artist_name, ENT_QUOTES), 
+                html_entity_decode($artist_name, ENT_QUOTES),
                 html_entity_decode($album_name, ENT_QUOTES)
             );
         if (!$image_url){
@@ -687,9 +701,9 @@ class OC_MEDIA_SUBSONIC{
         if (!$type){
             throw new Exception("Required string parameter 'type' is not present", 10);
         }
-        
+
         $albums = OC_Media_Collection::getAlbums(0);
-        
+
         switch($type){
             case 'newest':
                 // Sort them by album_id (pseudo-date..)
@@ -711,7 +725,7 @@ class OC_MEDIA_SUBSONIC{
                 OC_Media_Collection::getArtistName($albums[$i]['album_artist'])
             );
         }
-        
+
         if ($this->format == 'json' || $this->format == 'jsonp'){
             $response = array(
                 'albumList' => array(
@@ -719,22 +733,121 @@ class OC_MEDIA_SUBSONIC{
                 )
             );
         }
-        
+
         return $response;
     }
 
-    private function modelAlbumToSubsonic($album, $artist){
-        return array(
-                'artist' => $artist,
-                //'averageRating' =>
-                //'userRating' =>
-                'coverArt' => 'album_'.$album['album_id'],
-                'id' => 'album_'.$album['album_id'],
-                'isDir' => true,
-                'parent' => $album['album_artist'],
-                'title' => $album['album_name'],
-                //'created' =>
+    public function getArtist($params) {
+        $id = (isset($params['id']))?$params['id']:false;
+
+        if (!$id){
+            throw new Exception("Required int parameter 'id' is not present", 10);
+        }
+
+        if (strpos($id, '_') !== false){
+            $f_id = explode('_', $id);
+            $id = $f_id[1];
+        }
+
+
+        if (!OC_Media_Collection_Extra::isArtist($id)){
+            throw new Exception("Artist not found.", 70);
+        }
+
+        $albums = OC_Media_Collection::getAlbums($id);
+        $name = OC_Media_Collection::getArtistName($id);
+        $r = array(
+            'artist' => array(
+                'id' => 'artist_'.$id,
+                'name' => $name,
+                'coverArt' => 'artist_'.$id,
+                'albumCount' => sizeof($albums),
+                'album' => array()
+            )
         );
+
+        foreach ($albums as $album){
+            $r['artist']['album'][] = self::modelAlbumToSubsonic($album, $name, 180);
+        }
+
+        if (count($r['artist']['album']) == 1) {
+            if ($this->format == 'json' || $this->format == 'jsonp')
+                $r['artist']['album'] = $r['artist']['album'][0];
+        }
+
+        return $r;
+    }
+
+    public function getAlbum($params) {
+        $id = (isset($params['id']))?$params['id']:false;
+
+        if (!$id){
+            throw new Exception("Required int parameter 'id' is not present", 10);
+        }
+
+        if (strpos($id, '_') !== false){
+            $f_id = explode('_', $id);
+            $id = $f_id[1];
+        }
+
+        $album = OC_Media_Collection_Extra::getAlbum($id);
+
+        if (!$album){
+            throw new Exception("Album not found.", 70);
+        }
+
+        $songs = OC_Media_Collection::getSongs(0,$id);
+        $artist = OC_Media_Collection::getArtistName($id);
+        $r = array(
+            'album' => self::modelAlbumToSubsonic($album, $artist, 180)
+        );
+
+        $r['album']['song'] = array();
+        foreach ($songs as $song){
+            $r['album']['song'][] = self::modelSongToSubsonic($song, $artist, $album['album_id']);
+        }
+        return $r;
+    }
+
+    public function getCollectionInfo($params) {
+        $friends = OC_Media_Collection_Extra::getFriends();
+        return array(
+            'collection' => intval(OC_Media_Collection::getSongCount()),
+            'sources' => array_map(function($friend){
+                    return array(
+                        'owner' => $friend['uid'],
+                        'count' => intval($friend['count'])
+                    );
+            }, $friends)
+        );
+    }
+
+    private function modelAlbumToSubsonic($album, $artist, $version = 170){
+        if ($version <= 170){
+            return array(
+                'id' => 'album_'.$album['album_id'],
+                'title' => $album['album_name'],
+                //'averageRating' =>
+                //'starred' =>
+                //'created' =>
+                'album' => $album['album_name'],
+                'parent' => 'artist_'.$album['album_artist'],
+                'isDir' => true,
+                'artist' => $artist,
+                'coverArt' => 'album_'.$album['album_id'],
+            );
+        } else {
+            return array(
+                'id' => 'album_'.$album['album_id'],
+                'duration' => OC_Media_Collection_Extra::getAlbumLength($album['album_id']),
+                'songCount' => OC_Media_Collection_Extra::getAlbumSongCount($album['album_id']),
+                //'created' =>
+                'artistId' => 'artist_'.$album['album_artist'],
+                'name' => $album['album_name'],
+                'artist' => $artist,
+                'coverArt' => 'album_'.$album['album_id'],
+            );
+        }
     }
 
     private function modelSongToSubsonic($song, $artist, $album){
@@ -744,7 +857,7 @@ class OC_MEDIA_SUBSONIC{
          */
 
         return array(
-            'id' => $song['song_id'],
+            'id' => intval($song['song_id']),
             'parent' => 'album_'.$song['song_album'],
             'title' => $song['song_name'],
             'album' => $album,
@@ -752,20 +865,33 @@ class OC_MEDIA_SUBSONIC{
             'isDir' => false,
             'coverArt' => 'album_'.$song['song_album'],
             //'created' =>
-            'duration' => $song['song_length'],
+            'duration' => intval($song['song_length']),
             'bitRate' => round($song['song_size'] / $song['song_length'] * 0.008),
-            'track' => $song['song_track'],
+            'track' => intval($song['song_track']),
             //'year' =>
-            //'genre' => 
-            'size' => $song['song_size'],
+            //'genre' =>
+            'size' => intval($song['song_size']),
             'suffix' => 'mp3',
             'contentType' => 'audio/mpeg',
             'isVideo' => false,
             'path' => sprintf('%s/%s/%d - %s.mp3',$artist,$album,$song['song_track'],$song['song_name']),
-            'albumId' => $song['song_album'],
-            'artistId' => $song['song_artist'],
+            'albumId' => 'album_'.$song['song_album'],
+            'artistId' => 'artist_'.$song['song_artist'],
             'type' => 'music'
         );
+    }
+
+    private function modelArtistToSubsonic($artist, $version = 170){
+        $r = array(
+            'id' => 'artist_'.$artist['artist_id'],
+            'name' => $artist['artist_name']
+        );
+
+        if ($version > 170) {
+            $r['coverArt'] = 'artist_'.$artist['artist_id'];
+            $r['albumCount'] = OC_Media_Collection_Extra::getAlbumCount($artist['artist_id']);
+        }
+        return $r;
     }
 
     private function requestDupedParams($query){
@@ -778,5 +904,11 @@ class OC_MEDIA_SUBSONIC{
           $params[urldecode($name)][] = urldecode($value);
         }
         return $params;
+    }
+
+    private function cleanLuceneString($string){
+        $string = preg_replace('/[\"\*"]/', '', $string);
+        $string = trim(htmlentities($string));
+        return $string;
     }
 }

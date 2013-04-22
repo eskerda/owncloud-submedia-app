@@ -10,12 +10,7 @@ CREATE TABLE oc_submedia_playlists(
   /*id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,*/
   userid VARCHAR(64) NOT NULL,
   name VARCHAR(255) DEFAULT '',
-  /* MySQL */
-  created DATETIME
-  /* PostgreSQL */
-  /*created TIMESTAMP*/
-  /* SQLite3 */
-  /*created CHAR(19)*/
+  created VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE oc_submedia_playlists_songs(

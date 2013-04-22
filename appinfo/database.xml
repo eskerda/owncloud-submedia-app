@@ -28,7 +28,7 @@
     <type>text</type>
     <default></default>
     <notnull>true</notnull>
-    <length>255</length>
+    <length>64</length>
    </field>
 
    <field>
@@ -41,18 +41,19 @@
 
    <field>
     <name>created</name>
-    <type>timestamp</type>
+    <type>text</type>
     <default></default>
-    <notnull>false</notnull>
-    <length></length>
+    <notnull>true</notnull>
+    <length>255</length>
    </field>
+
   </declaration>
 
  </table>
 
  <table>
 
-  <name>*dbprefix*submedia_playlist_song</name>
+  <name>*dbprefix*submedia_playlists_songs</name>
 
   <declaration>
 
@@ -69,12 +70,12 @@
     <name>song_id</name>
     <type>integer</type>
     <default></default>
-    <notnull>false</notnull>
+    <notnull>true</notnull>
     <length>4</length>
    </field>
 
   </declaration>
- 
+
  </table>
 
 </database>
