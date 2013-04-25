@@ -1,4 +1,7 @@
 <?php
+
+namespace OCA\Submedia;
+
 /**
  * ownCloud - Media Playlists
  *
@@ -23,30 +26,30 @@
 /**
  * This class contains utils for SubMedia
  */
-class OC_Submedia_Utils {
+class Utils {
 
-    public static function requestDupedParams($query){
+    public static function requestDupedParams($query) {
         $query  = explode('&', $query);
         $params = array();
 
-        foreach( $query as $param )
-        {
+        foreach ( $query as $param ) {
           list($name, $value) = explode('=', $param);
           $params[urldecode($name)][] = urldecode($value);
         }
         return $params;
     }
 
-    public static function fixBooleanKeys($data, $booleankeys, $true, $false, $clean_function = NULL){
-        foreach($data as $key=>$value){
-            if (is_array($value)){
+    public static function fixBooleanKeys($data, $booleankeys, $true, $false, $clean_function = null) {
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
                 $value = self::fixBooleanKeys($value, $booleankeys, $true, $false, $clean_function);
             } else {
-                if (in_array($key, $booleankeys)){
+                if (in_array($key, $booleankeys)) {
                     $value = $value == true?$true:$false;
                 }
-                if ($clean_function != NULL && is_string($value))
-                $value = $clean_function($value);
+                if ($clean_function && is_string($value)) {
+                    $value = $clean_function($value);
+                }
             }
             $data[$key] = $value;
         }

@@ -3,10 +3,12 @@
 $req_info = pathinfo($_SERVER['PATH_INFO']);
 $action = $req_info['filename'];
 $response = array();
+
 try {
-    $subsonic = new OC_Media_Subsonic($_REQUEST);
+    $subsonic = new OCA\Submedia\Subsonic($_REQUEST);
     $userid = OC_User::getUser();
-    switch($action){
+
+    switch ($action) {
         case 'ping':
             // Pong >_<
             break;
@@ -66,22 +68,22 @@ try {
         default:
             throw new Exception('Not Implemented', 30);
     }
-} catch (Exception $e){
+} catch (Exception $e) {
     $error = array(
         'message' => $e->getMessage(),
         'code' => $e->getCode()
     );
 }
 
-$tmpl = new OCP\Template("submedia", OC_Media_Subsonic::getFormat($_REQUEST));
+$tmpl = new OCP\Template('submedia', OCA\Submedia\Subsonic::getFormat($_REQUEST));
 
 $tmpl->assign('response', $response, false);
 $tmpl->assign('action', $action, false);
-if (isset($_REQUEST['callback'])){
+if (isset($_REQUEST['callback'])) {
     $tmpl->assign('callback', $_REQUEST['callback']);
 }
 
-if (isset($error)){
+if (isset($error)) {
     $tmpl->assign('error', $error);
     $tmpl->assign('status', 'failed');
 } else {

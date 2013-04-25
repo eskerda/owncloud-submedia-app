@@ -1,7 +1,5 @@
-<playlist <?php foreach ($_['response']['playlist'] as $key=>$value): ?>
-    <?php echo $key; ?>="<?php echo $value; ?>" <?php endforeach; ?>>
+<playlist <? foreach ($_['response']['playlist'] as $key => $value): echo $key . '="' . $value . '" '; endforeach; ?>>
     <?php foreach($_['response']['entry'] as $entry): ?>
-    <entry <?php foreach ($entry as $key=>$value): ?>
-    <?php echo $key; ?>="<?php echo $value; ?>" <?php endforeach; ?>/>
+    <entry <? foreach ($entry as $key => $value): echo $key . '="' . $value . '" '; endforeach; ?>/>
     <?php endforeach; ?>
 </playlist>
