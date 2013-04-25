@@ -1,1 +1,1 @@
-<license valid="true"/>
+<license valid="true" />

@@ -1,20 +1,12 @@
-<?php $data = $_['response']['searchResult2']; ?>
+<? $data = $_['response']['searchResult2']; ?>
 <searchResult2>
-<?php if (isset($data['artist'])): ?>
-<?php foreach($data['artist'] as $artist): ?>
-<artist name="<?php echo $artist['name']; ?>" id="<?php echo $artist['id']; ?>"/>
-<?php endforeach; ?>
-<?php endif; ?>
-<?php if (isset($data['album'])): ?>
-<?php foreach($data['album'] as $album): ?>
-<album <?php foreach($album as $key=>$value): ?>
-<?php echo $key; ?>="<?php echo $value; ?>" <?php endforeach; ?> />
-<?php endforeach; ?>
-<?php endif; ?>
-<?php if (isset($data['song'])): ?>
-<?php foreach($data['song'] as $song): ?>
-<song <?php foreach($song as $key=>$value): ?>
-<?php echo $key; ?>="<?php echo $value; ?>" <?php endforeach; ?> />
-<?php endforeach; ?>
-<?php endif; ?>
+<? if (isset($data['artist'])): foreach ($data['artist'] as $artist): ?>
+<artist name="<?=$artist['name'];?>" id="<?=$artist['id'];?>" />
+<? endforeach; endif; ?>
+<? if (isset($data['album'])): foreach ($data['album'] as $album): ?>
+<album <? foreach ($album as $key => $value): echo $key . '="' . $value . '" '; endforeach; ?>/>
+<? endforeach; endif; ?>
+<? if (isset($data['song'])): foreach ($data['song'] as $song): ?>
+<song <? foreach ($song as $key => $value): echo $key . '="' . $value . '" '; endforeach; ?>/>
+<? endforeach; endif; ?>
 </searchResult2>
