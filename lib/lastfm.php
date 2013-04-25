@@ -1,5 +1,7 @@
 <?php
 
+namespace OCA\Submedia;
+
 /**
  * ownCloud - Media Playlists
  *
@@ -21,99 +23,101 @@
  *
  */
 
-class OC_Media_LastFM{
-    public static $api_key = "";
-    public static $root = "http://ws.audioscrobbler.com/2.0/";
-    public static $album_info_url = "?method=album.getinfo&api_key=%s&artist=%s&album=%s";
+class LastFM {
 
-    public function __construct($public_api_key){
-        self::$api_key = $public_api_key;
-        return $this;
+    public $api_key = '';
+    public $root = 'http://ws.audioscrobbler.com/2.0/';
+    public $album_info_url = '?method=album.getinfo&api_key=%s&artist=%s&album=%s';
+
+    public function __construct($public_api_key) {
+        $this->api_key = $public_api_key;
     }
 
-    public static function getAlbumInfo($artistName, $albumName){
-        $url = sprintf(self::$root.self::$album_info_url,
-            self::$api_key,
+    public function getAlbumInfo($artistName, $albumName) {
+        $url = sprintf(
+            $this->root . $this->album_info_url,
+            $this->api_key,
             urlencode($artistName),
             urlencode($albumName)
         );
 
         $info = file_get_contents($url);
 
-        if ($info == ""){
-            throw new Exception("not found");
+        if ($info == "") {
+            throw new \Exception('not found');
         }
-        $xml = simplexml_load_string($info);
+        //$xml = simplexml_load_string($info);
         return $info;
     }
 
-    public static function getCoverArt($artistName, $albumName){
+    public function getCoverArt($artistName, $albumName) {
         $simpleFileCache = new Simple_File_Cache();
 
-        $file = $simpleFileCache::getFilePath($artistName.$albumName);
+        $file = $simpleFileCache->getFilePath($artistName . $albumName);
 
-        if ($file)
+        if ($file) {
             return $file;
+        }
 
-        if ($simpleFileCache::isBlackListed($artistName.$albumName))
+        if ($simpleFileCache->isBlackListed($artistName . $albumName)) {
             return false;
+        }
 
-        try{
-            $album_info = self::getAlbumInfo($artistName, $albumName);
+        try {
+            $album_info = $this->getAlbumInfo($artistName, $albumName);
             $xml = simplexml_load_string($album_info);
             $image_url = (string)$xml->album->image[3];
-        } catch (Exception $e){
+        } catch (\Exception $e) {
             $image_url = false;
         }
-        if (!$image_url){
-            $simpleFileCache::blackList($artistName.$albumName);
+        if (!$image_url) {
+            $simpleFileCache->blackList($artistName . $albumName);
             return false;
-        } else {
-            return $simpleFileCache::putFile($artistName.$albumName, $image_url);
         }
+        return $simpleFileCache->putFile($artistName . $albumName, $image_url);
     }
 }
 
-class Simple_File_Cache{
-    protected static $cache = '/oc_submedia/cache/';
-    protected static $blacklist = '/oc_submedia/cache/blacklisted/';
+class Simple_File_Cache {
 
-    public function __construct($tmp_path = false){
-        if (!$tmp_path)
+    protected $cache = '/oc_submedia/cache/';
+    protected $blacklist = '/oc_submedia/cache/blacklisted/';
+
+    public function __construct($tmp_path = null) {
+        if (!$tmp_path) {
             $tmp_path = sys_get_temp_dir();
+        }
 
-        self::$cache = $tmp_path.self::$cache;
-        self::$blacklist = $tmp_path.self::$blacklist;
+        $this->cache = $tmp_path . $this->cache;
+        $this->blacklist = $tmp_path . $this->blacklist;
 
-        if (!is_dir(self::$cache))
-            mkdir(self::$cache, 0777, true);
-
-        if (!is_dir(self::$blacklist))
-            mkdir(self::$blacklist, 0777, true);
-
-        return $this;
-    }
-
-    public static function getFilePath($key){
-        if (file_exists(self::$cache.md5($key)))
-            return self::$cache.md5($key);
-        else
-            return false;
-    }
-
-    public static function putFile($key, $path){
-        if (copy($path, self::$cache.md5($key))){
-            return self::getFilePath($key);
-        } else {
-            return false;
+        if (!is_dir($this->cache)) {
+            mkdir($this->cache, 0777, true);
+        }
+        if (!is_dir($this->blacklist)) {
+            mkdir($this->blacklist, 0777, true);
         }
     }
 
-    public static function blackList($key){
-        return touch(self::$blacklist.md5($key));
+    public function getFilePath($key) {
+        if (is_file($this->cache . md5($key))) {
+            return $this->cache . md5($key);
+        }
+        return false;
     }
 
-    public static function isBlackListed($key){
-        return file_exists(self::$blacklist.md5($key));
+    public function putFile($key, $path) {
+        if (copy($path, $this->cache . md5($key))) {
+            return $this->getFilePath($key);
+        }
+        return false;
+    }
+
+    public function blackList($key) {
+        return touch($this->blacklist . md5($key));
+    }
+
+    public function isBlackListed($key) {
+        return is_file($this->blacklist . md5($key));
     }
 }

@@ -1,6 +1,5 @@
 <albumList>
-<?php foreach($_['response'] as $album): ?>
-<album <?php foreach($album as $key=>$value): ?>
-    <?php echo $key; ?>="<?php echo $value; ?>" <?php endforeach; ?>/>
+<? foreach ($_['response'] as $album): ?>
+<album <? foreach ($album as $key => $value): echo $key . '="' . $value . '" '; endforeach; ?>/>
 <?php endforeach; ?>
 </albumList>

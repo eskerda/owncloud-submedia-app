@@ -1,12 +1,11 @@
 <?php
 
-
 OCP\App::checkAppEnabled('media');
 OCP\App::checkAppEnabled('submedia');
 
-OC::$CLASSPATH['OC_Media_Collection'] = 'apps/media/lib_collection.php';
-OC::$CLASSPATH['OC_Media_Collection_Extra'] = 'apps/submedia/lib/collection_extra.php';
-OC::$CLASSPATH['OC_Media_Subsonic'] = 'apps/submedia/lib/subsonic.php';
-OC::$CLASSPATH['OC_Media_Playlist'] = 'apps/submedia/lib/playlist.php';
-OC::$CLASSPATH['OC_Media_LastFM'] = 'apps/submedia/lib/lastfm.php';
-OC::$CLASSPATH['OC_Submedia_Utils'] = 'apps/submedia/lib/utils.php';
+OC::$CLASSPATH['OCA\Media\Collection'] = 'media/lib/collection.php';
+OC::$CLASSPATH['OCA\Submedia\Collection_Extra'] = 'submedia/lib/collection_extra.php';
+OC::$CLASSPATH['OCA\Submedia\Subsonic'] = 'submedia/lib/subsonic.php';
+OC::$CLASSPATH['OCA\Submedia\Playlist'] = 'submedia/lib/playlist.php';
+OC::$CLASSPATH['OCA\Submedia\LastFM'] = 'submedia/lib/lastfm.php';
+OC::$CLASSPATH['OCA\Submedia\Utils'] = 'submedia/lib/utils.php';
