@@ -121,11 +121,11 @@ class Subsonic {
             . ' FROM *PREFIX*media_users'
             . ' WHERE user_id = :user_id'
         );
-        $users = $query->execute(array(':user_id' => $user))->fetchAll();
-        if (count($users) > 0) {
-            $auth = $users[0]['user_password_sha256'];
+        $result = $query->execute(array(':user_id' => $user))->fetchRow();
+        if ($result) {
+            $auth = $result['user_password_sha256'];
             if ($auth === $password) {
-                \OC_User::setUserId($users[0]['user_id']);
+                \OC_User::setUserId($result['user_id']);
                 return true;
             }
         }
@@ -163,7 +163,7 @@ class Subsonic {
             )
         );
 
-        $friends = $this->collectionExtra->getFriends($this->user);
+        $friends = $this->collection->getFriends();
         foreach ($friends as $friend) {
             $musicFolders['musicFolder'][] = array(
                 'id' => $friend['uid'],
@@ -208,7 +208,7 @@ class Subsonic {
         $musicFolderId = !$musicFolderId && isset($params['owner'])
             ? $params['owner'] : $musicFolderId;
 
-        $artists = $this->collectionExtra->getArtists('%', false, $musicFolderId);
+        $artists = $this->collection->getArtists('%', false, $musicFolderId);
 
         $top_root = 'indexes';
         if ($version > 170) {
@@ -296,7 +296,7 @@ class Subsonic {
                         // Return all albums
                         $albums = $this->collection->getAlbums();
                     } else {
-                        $albums = $this->collectionExtra->getAlbums(0, '', false, $user);
+                        $albums = $this->collection->getAlbums(0, '', false, $user);
                     }
 
                     foreach($albums as $album) {
@@ -314,41 +314,11 @@ class Subsonic {
         if (!$id) {
             throw new \Exception("Required string parameter 'id' not present", 10);
         }
+
         if ($song = $this->collection->getSong($id)) {
-            // Find a shared music file owner and path
-            if (strpos($song['song_path'], '/Shared/') === 0) {
-                $statement = \OCP\DB::prepare(
-                    'SELECT uid_owner, file_source'
-                    . ' FROM *PREFIX*share'
-                    . ' WHERE share_with = :share_with'
-                    . ' AND file_target = :file_target'
-                    . ' LIMIT 1'
-                );
-                $results = $statement->execute(array(
-                    ':share_with' => $song['song_user'],
-                    ':file_target' => substr($song['song_path'], strlen('/Shared'))
-                ))->fetchAll();
-                if (count($results) > 0) {
-                    $fileId = $results[0]['file_source'];
-                    $userId = $results[0]['uid_owner'];
-                    $statement = \OCP\DB::prepare(
-                        'SELECT path'
-                        . ' FROM *PREFIX*filecache'
-                        . ' WHERE fileid = :fileid'
-                        . ' LIMIT 1'
-                    );
-                    $results = $statement->execute(array(
-                        ':fileid' => $fileId
-                    ))->fetchAll();
-                    if (count($results) > 0) {
-                        $filePath = $results[0]['path'];
-                        $song['song_user'] = $userId;
-                        $song['song_path'] = preg_replace("/^(" . $userId . "\/files|files)/", "", $filePath);
-                        \OC_Filesystem::chroot($userId . '/files');
-                    }
-                }
+            if ($song['song_user'] != \OCP\USER::getUser()) {
+                \OC\Files\Filesystem::getView()->chroot($song['song_user'] . '/files');
             }
-            // Send the music stream
             \OC_Util::setupFS($song['song_user']);
             header('Content-type: ' . \OC_Filesystem::getMimeType($song['song_path']));
             header('Content-Length: ' . $song['song_size']);
@@ -390,7 +360,7 @@ class Subsonic {
         $artists = array();
         $artist_id = 0;
         if ($artist_q) {
-            $artists = $this->collectionExtra->getArtists($artist_q, false, $owner);
+            $artists = $this->collection->getArtists($artist_q, false, $owner);
             if (empty($artists)) {
                 $artist_id = 0;
             } else {
@@ -401,7 +371,7 @@ class Subsonic {
 
         $albums = array();
         if ($album_q) {
-            $albums = $this->collectionExtra->getAlbums($artist_id, $album_q, false, $owner);
+            $albums = $this->collection->getAlbums($artist_id, $album_q, false, $owner);
         }
 
         $album_id = 0;
@@ -412,7 +382,7 @@ class Subsonic {
         if (!$artists && !$albums && !$title_q) {
             $matches = array();
         } else {
-            $songs = $this->collectionExtra->getSongs(
+            $songs = $this->collection->getSongs(
                 $artist_id, $album_id, $title_q, false, $owner
             );
 
@@ -466,9 +436,9 @@ class Subsonic {
         $owner_id = isset($query['owner'])
             ? $query['owner'] : false;
 
-        $artists = $this->collectionExtra->getArtists($q, false, $owner_id);
-        $albums = $this->collectionExtra->getAlbums(0, $q, false, $owner_id);
-        $songs = $this->collectionExtra->getSongs(0, 0, $q, false, $owner_id);
+        $artists = $this->collection->getArtists($q, false, $owner_id);
+        $albums = $this->collection->getAlbums(0, $q, false, $owner_id);
+        $songs = $this->collection->getSongs(0, 0, $q, false, $owner_id);
 
         /** Dummy Cache for album and artists ids to name **/
         $art_ch = array();
@@ -481,7 +451,7 @@ class Subsonic {
                 'name' => $artist['artist_name'],
                 'id' => 'artist_'.$artist['artist_id']
             );
-            $albums = array_merge($albums, $this->collectionExtra->getAlbums($artist['artist_id'], '', false, $owner_id));
+            $albums = array_merge($albums, $this->collection->getAlbums($artist['artist_id'], '', false, $owner_id));
 
             $art_ch[$artist['artist_id']] = $artist['artist_name'];
         }
@@ -491,7 +461,7 @@ class Subsonic {
                 $art_ch[$album['album_artist']] = $this->collection->getArtistName($album['album_artist']);
             }
             $r['album'][] = $this->modelAlbumToSubsonic($album, $art_ch[$album['album_artist']]);
-            $songs = array_merge($songs, $this->collectionExtra->getSongs(0, $album['album_id'], '', false, $owner_id));
+            $songs = array_merge($songs, $this->collection->getSongs(0, $album['album_id'], '', false, $owner_id));
             $alb_ch[$album['album_id']] = $album['album_name'];
         }
 
@@ -819,7 +789,7 @@ class Subsonic {
     }
 
     public function getCollectionInfo($params) {
-        $friends = $this->collectionExtra->getFriends();
+        $friends = $this->collection->getFriends();
         return array(
             'collection' => intval($this->collection->getSongCount()),
             'sources' => array_map(function($friend) {
