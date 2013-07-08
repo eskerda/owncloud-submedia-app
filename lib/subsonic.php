@@ -316,13 +316,13 @@ class Subsonic {
         }
 
         if ($song = $this->collection->getSong($id)) {
+            \OC_Util::setupFS($song['song_user']);
             if ($song['song_user'] != \OCP\USER::getUser()) {
                 \OC\Files\Filesystem::getView()->chroot($song['song_user'] . '/files');
             }
-            \OC_Util::setupFS($song['song_user']);
-            header('Content-type: ' . \OC_Filesystem::getMimeType($song['song_path']));
-            header('Content-Length: ' . $song['song_size']);
-            \OC_Filesystem::readfile($song['song_path']);
+            header('Content-Type: ' . \OC\Files\Filesystem::getMimeType($song['song_path']));
+            header('Content-Length: ' . \OC\Files\Filesystem::filesize($song['song_path']));
+            \OC\Files\Filesystem::readfile($song['song_path']);
         }
     }
 
