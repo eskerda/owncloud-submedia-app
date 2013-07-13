@@ -6,8 +6,6 @@ $response = array();
 
 try {
     $subsonic = new OCA\Submedia\Subsonic($_REQUEST);
-    $userid = OC_User::getUser();
-
     switch ($action) {
         case 'ping':
             // Pong >_<

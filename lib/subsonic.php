@@ -49,10 +49,10 @@ Error codes
 
 class Subsonic {
 
-	private $collection;
-	private $collectionExtra;
-	private $playlist;
-	private $lastfm;
+    private $collection;
+    private $collectionExtra;
+    private $playlist;
+    private $lastfm;
 
     private $lastfm_key = '644ce3b9599de151b83f69eb1b420a1e';
 
@@ -303,7 +303,6 @@ class Subsonic {
                         $artist = $this->collection->getArtistName($album['album_artist']);
                         $response['directory']['child'][] = $this->modelAlbumToSubsonic($album, $artist);
                     }
-
             }
 
             return $response;
