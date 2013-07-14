@@ -9,16 +9,6 @@ if (!$errorReporting) {
     ini_set('log_errors', 1);
 }
 
-$_['response'] = OCA\Submedia\Utils::fixBooleanKeys(
-    $_['response'],
-    array('isDir', 'isVideo'),
-    'true',
-    'false',
-    function($text) {
-        return html_entity_decode($text, ENT_QUOTES);
-    }
-);
-
 $base = array(
     'subsonic-response' => array(
         'status' => $_['status'],
