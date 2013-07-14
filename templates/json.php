@@ -9,6 +9,24 @@ if (!$errorReporting) {
     ini_set('log_errors', 1);
 }
 
+/**
+ * About boolean keys in json:
+ * There was a reason why boolean keys where being transformed into
+ * strings ('true', 'false'). Maybe some client needs it, but at
+ * least in the latest subtunes version there's no need for it.
+ */
+/*
+$_['response'] = OCA\Submedia\Utils::fixBooleanKeys(
+    $_['response'],
+    array('isDir', 'isVideo'),
+    'true',
+    'false',
+    function($text) {
+        return html_entity_decode($text, ENT_QUOTES);
+    }
+);
+*/
+
 $base = array(
     'subsonic-response' => array(
         'status' => $_['status'],
